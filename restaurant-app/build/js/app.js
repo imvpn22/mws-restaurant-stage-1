@@ -1,273 +1,10 @@
-var API_URL = 'http://localhost:1337/restaurants';
-var fetchStatus = 0;
-
-// Helper Functions for various IDb Operations
-class IDbOperationsHelper {
-	static checkForIDbSupport() {
-		if (!('indexedDB' in window)) {
-			return 0;
-		} else {
-			return 1;
-		}
-	}
-
-	static openIDb(name, version, objectStoreName) {
-		var dbPromise = idb.open(name, version, upgradeDB => {
-			upgradeDB.createObjectStore(objectStoreName, { autoIncrement: true });
-		});
-		return dbPromise;
-	}
-
-	static addToDb(dbPromise, objectStoreName, permision, jsonData) {
-		dbPromise.then(db => {
-			var transact = db.transaction(objectStoreName, permision);
-			//Add all the json content here
-			transact.objectStore(objectStoreName).put(jsonData);
-			return transact.complete;
-		}).then(response => {
-			console.log('Restaurant saved to IDb');
-		});
-	}
-
-	static getAllData(dbPromise, transactionName, objectStoreName) {
-		var responseArrayPromise = dbPromise.then(db => db
-			.transaction(transactionName)
-			.objectStore(objectStoreName)
-			.getAll()
-		);
-		responseArrayPromise.then(arry => {
-			IDbOperationsHelper.setRestaurantsData(arry);
-		});
-	}
-
-	static getRestaurantsFromServer(dbPromise, objectStoreName, permision, callback) {
-		fetch(API_URL)
-			.then(response => response.json())
-			.then(responseJson => {
-				responseJson.forEach(restaurant => {
-					restaurant = IDbOperationsHelper.addMissingData(restaurant);
-				});
-
-				if (fetchStatus != 1) {
-					fetchStatus = 1;
-					responseJson.forEach(restaurantData => {
-
-						//Add every single restaurant data to IDb
-						IDbOperationsHelper.addToDb(
-							dbPromise,
-							objectStoreName,
-							permision,
-							restaurantData
-						);
-					});
-				}
-
-				console.log(responseJson);
-				callback (null, responseJson);
-			}).catch(error => {
-				console.log(`Unable to fetch restaurants, Error: ${error}`);
-				callback (error, null);
-			});
-	}
-
-	static getRestaurantsData(callback) {
-		var idbName = 'restaurants-data';
-		var dbVersion = 1;
-		var objectStoreNameString = 'restaurants';
-		var transactionNameString = 'restaurants';
-		var dbPermission = 'readwrite';
-
-		var dbPromise = IDbOperationsHelper.openIDb(
-			idbName,
-			dbVersion,
-			objectStoreNameString
-		);
-
-		dbPromise.then(db =>
-			db.transaction(transactionNameString)
-				.objectStore(objectStoreNameString)
-				.getAll()
-		).then(responseObejcts => {
-			if (responseObejcts.length <= 0) {
-				IDbOperationsHelper.getRestaurantsFromServer(
-					dbPromise,
-					objectStoreNameString,
-					dbPermission,
-					callback
-				);
-			} else {
-				callback(null, responseObejcts);
-			}
-		});
-	}
-
-	// Handle for last entry on Restaurants List
-	static addMissingData(restJson) {
-		if (!isNaN(restJson.photograph)) {
-			restJson.photograph = restJson.photograph + '.jpg';
-		} else {
-			restJson['photograph'] = restJson.id + '.jpg';
-		}
-		return restJson;
-	}
-}
-
-// Common database helper functions.
-class DBHelper {
-	static get NEW_URL() {
-		return 'http://localhost:1337/restaurants';
-	}
-	/**
-     * Fetch a restaurant by its ID.
-     */
-	static fetchRestaurantById(id, callback) {
-		// fetch all restaurants with proper error handling.
-		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				const restaurant = restaurants.find(r => r.id == id);
-				if (restaurant) {
-					// Got the restaurant
-					callback(null, restaurant);
-				} else {
-					// Restaurant does not exist in the database
-					callback('Restaurant does not exist', null);
-				}
-			}
-		});
-	}
-
-	/**
-     * Fetch restaurants by a cuisine type with proper error handling.
-     */
-	static fetchRestaurantByCuisine(cuisine, callback) {
-		// Fetch all restaurants  with proper error handling
-		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				// Filter restaurants to have only given cuisine type
-				const results = restaurants.filter(r => r.cuisine_type == cuisine);
-				callback(null, results);
-			}
-		});
-	}
-
-	/**
-     * Fetch restaurants by a neighborhood with proper error handling.
-     */
-	static fetchRestaurantByNeighborhood(neighborhood, callback) {
-		// Fetch all restaurants
-		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				// Filter restaurants to have only given neighborhood
-				const results = restaurants.filter(r => r.neighborhood == neighborhood);
-				callback(null, results);
-			}
-		});
-	}
-
-	/**
-     * Fetch restaurants by a cuisine and a neighborhood with proper error handling.
-     */
-	static fetchRestaurantByCuisineAndNeighborhood(
-		cuisine,
-		neighborhood,
-		callback
-	) {
-		// Fetch all restaurants
-		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				let results = restaurants;
-				if (cuisine != 'all') {
-					// filter by cuisine
-					results = results.filter(r => r.cuisine_type == cuisine);
-				}
-				if (neighborhood != 'all') {
-					// filter by neighborhood
-					results = results.filter(r => r.neighborhood == neighborhood);
-				}
-				callback(null, results);
-			}
-		});
-	}
-
-	/**
-     * Fetch all neighborhoods with proper error handling.
-     */
-	static fetchNeighborhoods(callback) {
-		// Fetch all restaurants
-		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				// Get all neighborhoods from all restaurants
-				const neighborhoods = restaurants.map(
-					(v, i) => restaurants[i].neighborhood
-				);
-				// Remove duplicates from neighborhoods
-				const uniqueNeighborhoods = neighborhoods.filter(
-					(v, i) => neighborhoods.indexOf(v) == i
-				);
-				callback(null, uniqueNeighborhoods);
-			}
-		});
-	}
-
-	/**
-     * Fetch all cuisines with proper error handling.
-     */
-	static fetchCuisines(callback) {
-		// Fetch all restaurants
-		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
-			if (error) {
-				callback(error, null);
-			} else {
-				// Get all cuisines from all restaurants
-				const cuisines = restaurants.map((v, i) => restaurants[i].cuisine_type);
-				// Remove duplicates from cuisines
-				const uniqueCuisines = cuisines.filter(
-					(v, i) => cuisines.indexOf(v) == i
-				);
-				callback(null, uniqueCuisines);
-			}
-		});
-	}
-
-	/**
-     * Restaurant page URL.
-     */
-	static urlForRestaurant(restaurant) {
-		return `./restaurant.html?id=${restaurant.id}`;
-	}
-
-	/**
-     * Restaurant image URL.
-     */
-	static imageUrlForRestaurant(restaurant) {
-		return `/img/${restaurant.photograph}`;
-	}
-
-	/**
-     * Map marker for a restaurant.
-     */
-	static mapMarkerForRestaurant(restaurant, map) {
-		const marker = new L.marker(
-			[restaurant.latlng.lat, restaurant.latlng.lng],
-			{
-				title: restaurant.name,
-				alt: restaurant.name,
-				url: DBHelper.urlForRestaurant(restaurant)
-			}
-		);
-		marker.addTo(newMap);
-		return marker;
-	}
+if (navigator.serviceWorker) {
+	navigator.serviceWorker.register('/sw.js').then(function(reg) {
+		console.log('Worker registered!');
+		console.log(reg);
+	}).catch(function(err) {
+		console.log(err);
+	});
 }
 
 'use strict';
@@ -587,468 +324,276 @@ class DBHelper {
 	}
 }());
 
-if (navigator.serviceWorker) {
-	navigator.serviceWorker.register('/sw.js').then(function(reg) {
-		console.log('Worker registered!');
-		console.log(reg);
-	}).catch(function(err) {
-		console.log(err);
-	});
-}
+var API_URL = 'http://localhost:1337/restaurants';
+var fetchStatus = 0;
 
-// var restaurants;
-// var neighborhoods;
-// var cuisines;
-// var newMap;
-// var markers = [];
-
-/**
- * Fetch neighborhoods and cuisines as soon as the page is loaded.
- */
- document.addEventListener('DOMContentLoaded', (event) => {
-	initMap(); // added
-	fetchNeighborhoods();
-	fetchCuisines();
-});
-
-/**
- * Fetch all neighborhoods and set their HTML.
- */
- fetchNeighborhoods = () => {
-	DBHelper.fetchNeighborhoods((error, neighborhoods) => {
-		if (error) { // Got an error
-			console.error(error);
+// Helper Functions for various IDb Operations
+class IDbOperationsHelper {
+	static checkForIDbSupport() {
+		if (!('indexedDB' in window)) {
+			return 0;
 		} else {
-			self.neighborhoods = neighborhoods;
-			fillNeighborhoodsHTML();
+			return 1;
 		}
-	});
- };
-
-/**
- * Set neighborhoods HTML.
- */
- fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
-	const select = document.getElementById('neighborhoods-select');
-	neighborhoods.forEach(neighborhood => {
-		const option = document.createElement('option');
-		option.innerHTML = neighborhood;
-		option.value = neighborhood;
-		select.append(option);
-	});
- };
-
-/**
- * Fetch all cuisines and set their HTML.
- */
- fetchCuisines = () => {
-	DBHelper.fetchCuisines((error, cuisines) => {
-		if (error) { // Got an error!
-			console.error(error);
-		} else {
-			self.cuisines = cuisines;
-			fillCuisinesHTML();
-		}
-	});
- };
-
-/**
- * Set cuisines HTML.
- */
- fillCuisinesHTML = (cuisines = self.cuisines) => {
-	const select = document.getElementById('cuisines-select');
-
-	cuisines.forEach(cuisine => {
-		const option = document.createElement('option');
-		option.innerHTML = cuisine;
-		option.value = cuisine;
-		select.append(option);
-	});
- };
-
-/**
- * Initialize leaflet map, called from HTML.
- */
- initMap = () => {
-	self.newMap = L.map('map', {
-		center: [40.722216, -73.987501],
-		zoom: 12,
-		scrollWheelZoom: false
-	});
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
-		mapboxToken: 'pk.eyJ1IjoiaW12cG4yMiIsImEiOiJjaml2bnlycGExM3FuM3FxbTc0eWM2NHV2In0.ESs374xN3guFAGO_1EPdmQ',
-		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-		'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-		'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-		id: 'mapbox.streets'
-	}).addTo(newMap);
-
-	updateRestaurants();
- };
-/* window.initMap = () => {
-  let loc = {
-	lat: 40.722216,
-	lng: -73.987501
-  };
-  self.map = new google.maps.Map(document.getElementById('map'), {
-	zoom: 12,
-	center: loc,
-	scrollwheel: false
-  });
-  updateRestaurants();
-} */
-
-/**
- * Update page and map for current restalisturants.
- */
- updateRestaurants = () => {
-	const cSelect = document.getElementById('cuisines-select');
-	const nSelect = document.getElementById('neighborhoods-select');
-
-	const cIndex = cSelect.selectedIndex;
-	const nIndex = nSelect.selectedIndex;
-
-	const cuisine = cSelect[cIndex].value;
-	const neighborhood = nSelect[nIndex].value;
-
-	DBHelper.fetchRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, (error, restaurants) => {
-		if (error) { // Got an error!
-			console.error(error);
-		} else {
-			resetRestaurants(restaurants);
-			fillRestaurantsHTML();
-		}
-	});
- };
-
-/**
- * Clear current restaurants, their HTML and remove their map markers.
- */
- resetRestaurants = (restaurants) => {
-	// Remove all restaurants
-	self.restaurants = [];
-	const ul = document.getElementById('restaurants-list');
-	ul.innerHTML = '';
-
-	// Remove all map markers
-	if (self.markers) {
-		self.markers.forEach(marker => marker.remove());
 	}
-	self.markers = [];
-	self.restaurants = restaurants;
-};
 
-/**
- * Create all restaurants HTML and add them to the webpage.
- */
- fillRestaurantsHTML = (restaurants = self.restaurants) => {
-	const ul = document.getElementById('restaurants-list');
-	restaurants.forEach(restaurant => {
-		ul.append(createRestaurantHTML(restaurant));
-	});
-	addMarkersToMap();
- };
-
-/**
- * Create restaurant HTML.
- */
- createRestaurantHTML = (restaurant) => {
-	const li = document.createElement('li');
-	li.setAttribute('tabindex', 0);
-
-	const image = document.createElement('img');
-	image.src = DBHelper.imageUrlForRestaurant(restaurant);
-	image.className = 'restaurant-img';
-	if (image.src == 'http://localhost:8080/no-image') {
-		image.src = '';
-		image.classList.add('fallback-image-icon');
+	static openIDb(name, version, objectStoreName) {
+		var dbPromise = idb.open(name, version, upgradeDB => {
+			upgradeDB.createObjectStore(objectStoreName, { autoIncrement: true });
+		});
+		return dbPromise;
 	}
-	image.alt = `${restaurant.name} restaurant image`;
-	image.setAttribute('tabindex', 0);
-	li.append(image);
 
-	const details = document.createElement('div');
-	details.className = 'restaurant-details';
-	li.append(details);
-
-	const name = document.createElement('h2');
-	name.innerHTML = restaurant.name;
-	name.setAttribute('tabindex', 0);
-	details.append(name);
-
-	const neighborhood = document.createElement('p');
-	neighborhood.innerHTML = restaurant.neighborhood;
-	neighborhood.setAttribute('tabindex', 0);
-	details.append(neighborhood);
-
-	const address = document.createElement('p');
-	address.className = 'rest-address';
-	address.innerHTML = '<i class=\'fa fa-map-marker\'></i>' + restaurant.address;
-	address.setAttribute('tabindex', 0);
-	details.append(address);
-
-	const more = document.createElement('a');
-	more.innerHTML = 'View Details';
-	more.href = DBHelper.urlForRestaurant(restaurant);
-	more.setAttribute('aria-label', `View details of ${restaurant.name}`);
-	details.append(more);
-
-	return li;
- };
-
-/**
- * Add markers for current restaurants to the map.
- */
- addMarkersToMap = (restaurants = self.restaurants) => {
-	restaurants.forEach(restaurant => {
-		// Add marker to the map
-		const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.newMap);
-		marker.on('click', onClick);
-		function onClick() {
-			window.location.href = marker.options.url;
-		}
-		self.markers.push(marker);
-	});
-
- };
-/* addMarkersToMap = (restaurants = self.restaurants) => {
-  restaurants.forEach(restaurant => {
-	// Add marker to the map
-	const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);
-	google.maps.event.addListener(marker, 'click', () => {
-	  window.location.href = marker.url
-	});
-	self.markers.push(marker);
-  });
-} */
-
-
-/* Manage focus and tabindex on filter options */
-
-
-
-
-// var restaurant;
-var newMap;
-
-/**
- * Initialize map as soon as the page is loaded.
- */
-document.addEventListener('DOMContentLoaded', (event) => {
-	initMap();
-});
-
-/**
- * Initialize leaflet map
- */
-initMap = () => {
-	fetchRestaurantFromURL((error, restaurant) => {
-		if (error) { // Got an error!
-			console.error(error);
-		} else {
-			self.newMap = L.map('map', {
-				center: [restaurant.latlng.lat, restaurant.latlng.lng],
-				zoom: 16,
-				scrollWheelZoom: false
-			});
-			L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
-				mapboxToken: 'pk.eyJ1IjoiaW12cG4yMiIsImEiOiJjaml2bnlycGExM3FuM3FxbTc0eWM2NHV2In0.ESs374xN3guFAGO_1EPdmQ',
-				maxZoom: 18,
-				attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-				'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-				'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-				id: 'mapbox.streets'
-			}).addTo(newMap);
-			fillBreadcrumb();
-			DBHelper.mapMarkerForRestaurant(self.restaurant, self.newMap);
-		}
-	});
-};
-
-/* window.initMap = () => {
-  fetchRestaurantFromURL((error, restaurant) => {
-	if (error) { // Got an error!
-	  console.error(error);
-	} else {
-	  self.map = new google.maps.Map(document.getElementById('map'), {
-		zoom: 16,
-		center: restaurant.latlng,
-		scrollwheel: false
-	  });
-	  fillBreadcrumb();
-	  DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
-	}
-  });
-} */
-
-/**
- * Get current restaurant from page URL.
- */
-fetchRestaurantFromURL = (callback) => {
-	if (self.restaurant) { // restaurant already fetched!
-		callback(null, self.restaurant);
-		return;
-	}
-	const id = getParameterByName('id');
-	if (!id) { // no id found in URL
-		error = 'No restaurant id in URL';
-		callback(error, null);
-	} else {
-		DBHelper.fetchRestaurantById(id, (error, restaurant) => {
-			self.restaurant = restaurant;
-			if (!restaurant) {
-				console.error(error);
-				return;
-			}
-			fillRestaurantHTML();
-			callback(null, restaurant);
+	static addToDb(dbPromise, objectStoreName, permision, jsonData) {
+		dbPromise.then(db => {
+			var transact = db.transaction(objectStoreName, permision);
+			//Add all the json content here
+			transact.objectStore(objectStoreName).put(jsonData);
+			return transact.complete;
+		}).then(response => {
+			console.log('Restaurant saved to IDb');
 		});
 	}
-};
 
-/**
- * Create restaurant HTML and add it to the webpage
- */
-fillRestaurantHTML = (restaurant = self.restaurant) => {
-	const name = document.getElementById('restaurant-name');
-	name.innerHTML = restaurant.name;
-
-	const address = document.getElementById('restaurant-address');
-	address.innerHTML = '<i class=\'fa fa-map-marker\'></i>' + restaurant.address;
-
-	const image = document.getElementById('restaurant-img');
-	image.className = 'restaurant-img';
-	image.src = DBHelper.imageUrlForRestaurant(restaurant);
-	if (image.src == 'http://localhost:8080/no-image') {
-		image.classList.add('fallback-image-icon');
+	static getAllData(dbPromise, transactionName, objectStoreName) {
+		var responseArrayPromise = dbPromise.then(db => db
+			.transaction(transactionName)
+			.objectStore(objectStoreName)
+			.getAll()
+		);
+		responseArrayPromise.then(arry => {
+			IDbOperationsHelper.setRestaurantsData(arry);
+		});
 	}
-	image.alt = `${restaurant.name} restaurant image`;
 
-	const cuisine = document.getElementById('restaurant-cuisine');
-	cuisine.innerHTML = restaurant.cuisine_type;
+	static getRestaurantsFromServer(dbPromise, objectStoreName, permision, callback) {
+		fetch(API_URL)
+			.then(response => response.json())
+			.then(responseJson => {
+				responseJson.forEach(restaurant => {
+					restaurant = IDbOperationsHelper.addMissingData(restaurant);
+				});
 
-	// fill operating hours
-	if (restaurant.operating_hours) {
-		fillRestaurantHoursHTML();
+				if (fetchStatus != 1) {
+					fetchStatus = 1;
+					responseJson.forEach(restaurantData => {
+
+						//Add every single restaurant data to IDb
+						IDbOperationsHelper.addToDb(
+							dbPromise,
+							objectStoreName,
+							permision,
+							restaurantData
+						);
+					});
+				}
+
+				console.log(responseJson);
+				callback (null, responseJson);
+			}).catch(error => {
+				console.log(`Unable to fetch restaurants, Error: ${error}`);
+				callback (error, null);
+			});
 	}
-	// fill reviews
-	fillReviewsHTML();
-};
 
-/**
- * Create restaurant operating hours HTML table and add it to the webpage.
- */
-fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => {
-	const hours = document.getElementById('restaurant-hours');
-	for (let key in operatingHours) {
-		const row = document.createElement('tr');
+	static getRestaurantsData(callback) {
+		var idbName = 'restaurants-data';
+		var dbVersion = 1;
+		var objectStoreNameString = 'restaurants';
+		var transactionNameString = 'restaurants';
+		var dbPermission = 'readwrite';
 
-		const day = document.createElement('td');
-		day.innerHTML = key;
-		row.appendChild(day);
+		var dbPromise = IDbOperationsHelper.openIDb(
+			idbName,
+			dbVersion,
+			objectStoreNameString
+		);
 
-		const time = document.createElement('td');
-		time.innerHTML = operatingHours[key];
-		row.appendChild(time);
-
-		hours.appendChild(row);
+		dbPromise.then(db =>
+			db.transaction(transactionNameString)
+				.objectStore(objectStoreNameString)
+				.getAll()
+		).then(responseObejcts => {
+			if (responseObejcts.length <= 0) {
+				IDbOperationsHelper.getRestaurantsFromServer(
+					dbPromise,
+					objectStoreNameString,
+					dbPermission,
+					callback
+				);
+			} else {
+				callback(null, responseObejcts);
+			}
+		});
 	}
-};
 
-/**
- * Create all reviews HTML and add them to the webpage.
- */
-fillReviewsHTML = (reviews = self.restaurant.reviews) => {
-	const container = document.getElementById('reviews-container');
-	const title = document.createElement('h2');
-	title.innerHTML = 'Reviews';
-	title.setAttribute('tabindex', 0);
-	container.appendChild(title);
-
-	if (!reviews) {
-		const noReviews = document.createElement('p');
-		noReviews.innerHTML = 'No reviews yet!';
-		noReviews.setAttribute('tabindex', 0);
-		container.appendChild(noReviews);
-		return;
+	// Handle for last entry on Restaurants List
+	static addMissingData(restJson) {
+		if (!isNaN(restJson.photograph)) {
+			restJson.photograph = restJson.photograph + '.jpg';
+		} else {
+			restJson['photograph'] = restJson.id + '.jpg';
+		}
+		return restJson;
 	}
-	const ul = document.getElementById('reviews-list');
-	reviews.forEach(review => {
-		ul.appendChild(createReviewHTML(review));
-	});
-	container.appendChild(ul);
-};
+}
 
-/**
- * Create review HTML and add it to the webpage.
- */
-createReviewHTML = (review) => {
-	const li = document.createElement('li');
-	li.setAttribute('tabindex', 0);
-	const name = document.createElement('p');
-	name.className = 'review-user';
-	name.innerHTML = '<i class=\'fa fa-user\'></i>' + review.name;
-	name.setAttribute('tabindex', 0);
-	li.appendChild(name);
-
-	const date = document.createElement('p');
-	date.className = 'review-date';
-	date.innerHTML = '<i class=\'fa fa-calendar\'></i>' + review.date;
-	date.setAttribute('tabindex', 0);
-	li.appendChild(date);
-
-	const rating = document.createElement('p');
-	rating.className = 'review-rating';
-	// rating.innerHTML = `<i class='fa fa-star'></i>Rating: ${review.rating}`;
-	rating.innerHTML = '';
-	rating.setAttribute('tabindex', 0);
-	rating.setAttribute('aria-label', `Rating: ${review.rating} out of 5 stars`);
-
-	// Filled star for rating
-	for (i=0; i<review.rating; i++) {
-		let star = document.createElement('i');
-		star.className = 'fa fa-star';
-		rating.appendChild(star);
+// Common database helper functions.
+class DBHelper {
+	static get NEW_URL() {
+		return 'http://localhost:1337/restaurants';
 	}
-	for (i=review.rating; i<5; i++) {
-		let star = document.createElement('i');
-		star.className = 'far fa-star';
-		rating.appendChild(star);
+	/**
+     * Fetch a restaurant by its ID.
+     */
+	static fetchRestaurantById(id, callback) {
+		// fetch all restaurants with proper error handling.
+		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				const restaurant = restaurants.find(r => r.id == id);
+				if (restaurant) {
+					// Got the restaurant
+					callback(null, restaurant);
+				} else {
+					// Restaurant does not exist in the database
+					callback('Restaurant does not exist', null);
+				}
+			}
+		});
 	}
-	li.appendChild(rating);
 
-	const comments = document.createElement('p');
-	comments.className = 'review-comments';
-	comments.innerHTML = review.comments;
-	comments.setAttribute('tabindex', 0);
-	li.appendChild(comments);
+	/**
+     * Fetch restaurants by a cuisine type with proper error handling.
+     */
+	static fetchRestaurantByCuisine(cuisine, callback) {
+		// Fetch all restaurants  with proper error handling
+		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				// Filter restaurants to have only given cuisine type
+				const results = restaurants.filter(r => r.cuisine_type == cuisine);
+				callback(null, results);
+			}
+		});
+	}
 
-	return li;
-};
+	/**
+     * Fetch restaurants by a neighborhood with proper error handling.
+     */
+	static fetchRestaurantByNeighborhood(neighborhood, callback) {
+		// Fetch all restaurants
+		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				// Filter restaurants to have only given neighborhood
+				const results = restaurants.filter(r => r.neighborhood == neighborhood);
+				callback(null, results);
+			}
+		});
+	}
 
-/**
- * Add restaurant name to the breadcrumb navigation menu
- */
-fillBreadcrumb = (restaurant=self.restaurant) => {
-	const breadcrumb = document.getElementById('breadcrumb');
-	const li = document.createElement('li');
-	li.innerHTML = restaurant.name;
-	breadcrumb.appendChild(li);
-};
+	/**
+     * Fetch restaurants by a cuisine and a neighborhood with proper error handling.
+     */
+	static fetchRestaurantByCuisineAndNeighborhood(
+		cuisine,
+		neighborhood,
+		callback
+	) {
+		// Fetch all restaurants
+		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				let results = restaurants;
+				if (cuisine != 'all') {
+					// filter by cuisine
+					results = results.filter(r => r.cuisine_type == cuisine);
+				}
+				if (neighborhood != 'all') {
+					// filter by neighborhood
+					results = results.filter(r => r.neighborhood == neighborhood);
+				}
+				callback(null, results);
+			}
+		});
+	}
 
-/**
- * Get a parameter by name from page URL.
- */
-getParameterByName = (name, url) => {
-	if (!url)
-		url = window.location.href;
-	name = name.replace(/[\[\]]/g, '\\$&');
-	const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`),
-	results = regex.exec(url);
-	if (!results)
-		return null;
-	if (!results[2])
-		return '';
-	return decodeURIComponent(results[2].replace(/\+/g, ' '));
-};
+	/**
+     * Fetch all neighborhoods with proper error handling.
+     */
+	static fetchNeighborhoods(callback) {
+		// Fetch all restaurants
+		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				// Get all neighborhoods from all restaurants
+				const neighborhoods = restaurants.map(
+					(v, i) => restaurants[i].neighborhood
+				);
+				// Remove duplicates from neighborhoods
+				const uniqueNeighborhoods = neighborhoods.filter(
+					(v, i) => neighborhoods.indexOf(v) == i
+				);
+				callback(null, uniqueNeighborhoods);
+			}
+		});
+	}
+
+	/**
+     * Fetch all cuisines with proper error handling.
+     */
+	static fetchCuisines(callback) {
+		// Fetch all restaurants
+		IDbOperationsHelper.getRestaurantsData((error, restaurants) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				// Get all cuisines from all restaurants
+				const cuisines = restaurants.map((v, i) => restaurants[i].cuisine_type);
+				// Remove duplicates from cuisines
+				const uniqueCuisines = cuisines.filter(
+					(v, i) => cuisines.indexOf(v) == i
+				);
+				callback(null, uniqueCuisines);
+			}
+		});
+	}
+
+	/**
+     * Restaurant page URL.
+     */
+	static urlForRestaurant(restaurant) {
+		return `./restaurant.html?id=${restaurant.id}`;
+	}
+
+	/**
+     * Restaurant image URL.
+     */
+	static imageUrlForRestaurant(restaurant) {
+		return `/img/${restaurant.photograph}`;
+	}
+
+	/**
+     * Map marker for a restaurant.
+     */
+	static mapMarkerForRestaurant(restaurant, map) {
+		const marker = new L.marker(
+			[restaurant.latlng.lat, restaurant.latlng.lng],
+			{
+				title: restaurant.name,
+				alt: restaurant.name,
+				url: DBHelper.urlForRestaurant(restaurant)
+			}
+		);
+		marker.addTo(newMap);
+		return marker;
+	}
+}
+
+//# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImluZGV4Q29udHJvbGxlci5qcyIsImlkYi5qcyIsIklEYk9wZXJhdGlvbnNIZWxwZXIuanMiLCJkYmhlbHBlci5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUNSQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FDNVRBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQ2pIQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBIiwiZmlsZSI6ImFwcC5qcyIsInNvdXJjZXNDb250ZW50IjpbImlmIChuYXZpZ2F0b3Iuc2VydmljZVdvcmtlcikge1xuXHRuYXZpZ2F0b3Iuc2VydmljZVdvcmtlci5yZWdpc3RlcignL3N3LmpzJykudGhlbihmdW5jdGlvbihyZWcpIHtcblx0XHRjb25zb2xlLmxvZygnV29ya2VyIHJlZ2lzdGVyZWQhJyk7XG5cdFx0Y29uc29sZS5sb2cocmVnKTtcblx0fSkuY2F0Y2goZnVuY3Rpb24oZXJyKSB7XG5cdFx0Y29uc29sZS5sb2coZXJyKTtcblx0fSk7XG59XG4iLCIndXNlIHN0cmljdCc7XG5cbihmdW5jdGlvbigpIHtcblx0ZnVuY3Rpb24gdG9BcnJheShhcnIpIHtcblx0XHRyZXR1cm4gQXJyYXkucHJvdG90eXBlLnNsaWNlLmNhbGwoYXJyKTtcblx0fVxuXG5cdGZ1bmN0aW9uIHByb21pc2lmeVJlcXVlc3QocmVxdWVzdCkge1xuXHRcdHJldHVybiBuZXcgUHJvbWlzZShmdW5jdGlvbihyZXNvbHZlLCByZWplY3QpIHtcblx0XHRcdHJlcXVlc3Qub25zdWNjZXNzID0gZnVuY3Rpb24oKSB7XG5cdFx0XHRcdHJlc29sdmUocmVxdWVzdC5yZXN1bHQpO1xuXHRcdFx0fTtcblxuXHRcdFx0cmVxdWVzdC5vbmVycm9yID0gZnVuY3Rpb24oKSB7XG5cdFx0XHRcdHJlamVjdChyZXF1ZXN0LmVycm9yKTtcblx0XHRcdH07XG5cdFx0fSk7XG5cdH1cblxuXHRmdW5jdGlvbiBwcm9taXNpZnlSZXF1ZXN0Q2FsbChvYmosIG1ldGhvZCwgYXJncykge1xuXHRcdHZhciByZXF1ZXN0O1xuXHRcdHZhciBwID0gbmV3IFByb21pc2UoZnVuY3Rpb24ocmVzb2x2ZSwgcmVqZWN0KSB7XG5cdFx0XHRyZXF1ZXN0ID0gb2JqW21ldGhvZF0uYXBwbHkob2JqLCBhcmdzKTtcblx0XHRcdHByb21pc2lmeVJlcXVlc3QocmVxdWVzdCkudGhlbihyZXNvbHZlLCByZWplY3QpO1xuXHRcdH0pO1xuXG5cdFx0cC5yZXF1ZXN0ID0gcmVxdWVzdDtcblx0XHRyZXR1cm4gcDtcblx0fVxuXG5cdGZ1bmN0aW9uIHByb21pc2lmeUN1cnNvclJlcXVlc3RDYWxsKG9iaiwgbWV0aG9kLCBhcmdzKSB7XG5cdFx0dmFyIHAgPSBwcm9taXNpZnlSZXF1ZXN0Q2FsbChvYmosIG1ldGhvZCwgYXJncyk7XG5cdFx0cmV0dXJuIHAudGhlbihmdW5jdGlvbih2YWx1ZSkge1xuXHRcdFx0aWYgKCF2YWx1ZSkgcmV0dXJuO1xuXHRcdFx0cmV0dXJuIG5ldyBDdXJzb3IodmFsdWUsIHAucmVxdWVzdCk7XG5cdFx0fSk7XG5cdH1cblxuXHRmdW5jdGlvbiBwcm94eVByb3BlcnRpZXMoUHJveHlDbGFzcywgdGFyZ2V0UHJvcCwgcHJvcGVydGllcykge1xuXHRcdHByb3BlcnRpZXMuZm9yRWFjaChmdW5jdGlvbihwcm9wKSB7XG5cdFx0XHRPYmplY3QuZGVmaW5lUHJvcGVydHkoUHJveHlDbGFzcy5wcm90b3R5cGUsIHByb3AsIHtcblx0XHRcdFx0Z2V0OiBmdW5jdGlvbigpIHtcblx0XHRcdFx0XHRyZXR1cm4gdGhpc1t0YXJnZXRQcm9wXVtwcm9wXTtcblx0XHRcdFx0fSxcblx0XHRcdFx0c2V0OiBmdW5jdGlvbih2YWwpIHtcblx0XHRcdFx0XHR0aGlzW3RhcmdldFByb3BdW3Byb3BdID0gdmFsO1xuXHRcdFx0XHR9XG5cdFx0XHR9KTtcblx0XHR9KTtcblx0fVxuXG5cdGZ1bmN0aW9uIHByb3h5UmVxdWVzdE1ldGhvZHMoUHJveHlDbGFzcywgdGFyZ2V0UHJvcCwgQ29uc3RydWN0b3IsIHByb3BlcnRpZXMpIHtcblx0XHRwcm9wZXJ0aWVzLmZvckVhY2goZnVuY3Rpb24ocHJvcCkge1xuXHRcdFx0aWYgKCEocHJvcCBpbiBDb25zdHJ1Y3Rvci5wcm90b3R5cGUpKSByZXR1cm47XG5cdFx0XHRQcm94eUNsYXNzLnByb3RvdHlwZVtwcm9wXSA9IGZ1bmN0aW9uKCkge1xuXHRcdFx0XHRyZXR1cm4gcHJvbWlzaWZ5UmVxdWVzdENhbGwodGhpc1t0YXJnZXRQcm9wXSwgcHJvcCwgYXJndW1lbnRzKTtcblx0XHRcdH07XG5cdFx0fSk7XG5cdH1cblxuXHRmdW5jdGlvbiBwcm94eU1ldGhvZHMoUHJveHlDbGFzcywgdGFyZ2V0UHJvcCwgQ29uc3RydWN0b3IsIHByb3BlcnRpZXMpIHtcblx0XHRwcm9wZXJ0aWVzLmZvckVhY2goZnVuY3Rpb24ocHJvcCkge1xuXHRcdFx0aWYgKCEocHJvcCBpbiBDb25zdHJ1Y3Rvci5wcm90b3R5cGUpKSByZXR1cm47XG5cdFx0XHRQcm94eUNsYXNzLnByb3RvdHlwZVtwcm9wXSA9IGZ1bmN0aW9uKCkge1xuXHRcdFx0XHRyZXR1cm4gdGhpc1t0YXJnZXRQcm9wXVtwcm9wXS5hcHBseSh0aGlzW3RhcmdldFByb3BdLCBhcmd1bWVudHMpO1xuXHRcdFx0fTtcblx0XHR9KTtcblx0fVxuXG5cdGZ1bmN0aW9uIHByb3h5Q3Vyc29yUmVxdWVzdE1ldGhvZHMoUHJveHlDbGFzcywgdGFyZ2V0UHJvcCwgQ29uc3RydWN0b3IsIHByb3BlcnRpZXMpIHtcblx0XHRwcm9wZXJ0aWVzLmZvckVhY2goZnVuY3Rpb24ocHJvcCkge1xuXHRcdFx0aWYgKCEocHJvcCBpbiBDb25zdHJ1Y3Rvci5wcm90b3R5cGUpKSByZXR1cm47XG5cdFx0XHRQcm94eUNsYXNzLnByb3RvdHlwZVtwcm9wXSA9IGZ1bmN0aW9uKCkge1xuXHRcdFx0XHRyZXR1cm4gcHJvbWlzaWZ5Q3Vyc29yUmVxdWVzdENhbGwodGhpc1t0YXJnZXRQcm9wXSwgcHJvcCwgYXJndW1lbnRzKTtcblx0XHRcdH07XG5cdFx0fSk7XG5cdH1cblxuXHRmdW5jdGlvbiBJbmRleChpbmRleCkge1xuXHRcdHRoaXMuX2luZGV4ID0gaW5kZXg7XG5cdH1cblxuXHRwcm94eVByb3BlcnRpZXMoSW5kZXgsICdfaW5kZXgnLCBbXG5cdFx0J25hbWUnLFxuXHRcdCdrZXlQYXRoJyxcblx0XHQnbXVsdGlFbnRyeScsXG5cdFx0J3VuaXF1ZSdcblx0XSk7XG5cblx0cHJveHlSZXF1ZXN0TWV0aG9kcyhJbmRleCwgJ19pbmRleCcsIElEQkluZGV4LCBbXG5cdFx0J2dldCcsXG5cdFx0J2dldEtleScsXG5cdFx0J2dldEFsbCcsXG5cdFx0J2dldEFsbEtleXMnLFxuXHRcdCdjb3VudCdcblx0XSk7XG5cblx0cHJveHlDdXJzb3JSZXF1ZXN0TWV0aG9kcyhJbmRleCwgJ19pbmRleCcsIElEQkluZGV4LCBbXG5cdFx0J29wZW5DdXJzb3InLFxuXHRcdCdvcGVuS2V5Q3Vyc29yJ1xuXHRdKTtcblxuXHRmdW5jdGlvbiBDdXJzb3IoY3Vyc29yLCByZXF1ZXN0KSB7XG5cdFx0dGhpcy5fY3Vyc29yID0gY3Vyc29yO1xuXHRcdHRoaXMuX3JlcXVlc3QgPSByZXF1ZXN0O1xuXHR9XG5cblx0cHJveHlQcm9wZXJ0aWVzKEN1cnNvciwgJ19jdXJzb3InLCBbXG5cdFx0J2RpcmVjdGlvbicsXG5cdFx0J2tleScsXG5cdFx0J3ByaW1hcnlLZXknLFxuXHRcdCd2YWx1ZSdcblx0XSk7XG5cblx0cHJveHlSZXF1ZXN0TWV0aG9kcyhDdXJzb3IsICdfY3Vyc29yJywgSURCQ3Vyc29yLCBbXG5cdFx0J3VwZGF0ZScsXG5cdFx0J2RlbGV0ZSdcblx0XSk7XG5cblx0Ly8gcHJveHkgJ25leHQnIG1ldGhvZHNcblx0WydhZHZhbmNlJywgJ2NvbnRpbnVlJywgJ2NvbnRpbnVlUHJpbWFyeUtleSddLmZvckVhY2goZnVuY3Rpb24obWV0aG9kTmFtZSkge1xuXHRcdGlmICghKG1ldGhvZE5hbWUgaW4gSURCQ3Vyc29yLnByb3RvdHlwZSkpIHJldHVybjtcblx0XHRDdXJzb3IucHJvdG90eXBlW21ldGhvZE5hbWVdID0gZnVuY3Rpb24oKSB7XG5cdFx0XHR2YXIgY3Vyc29yID0gdGhpcztcblx0XHRcdHZhciBhcmdzID0gYXJndW1lbnRzO1xuXHRcdFx0cmV0dXJuIFByb21pc2UucmVzb2x2ZSgpLnRoZW4oZnVuY3Rpb24oKSB7XG5cdFx0XHRcdGN1cnNvci5fY3Vyc29yW21ldGhvZE5hbWVdLmFwcGx5KGN1cnNvci5fY3Vyc29yLCBhcmdzKTtcblx0XHRcdFx0cmV0dXJuIHByb21pc2lmeVJlcXVlc3QoY3Vyc29yLl9yZXF1ZXN0KS50aGVuKGZ1bmN0aW9uKHZhbHVlKSB7XG5cdFx0XHRcdFx0aWYgKCF2YWx1ZSkgcmV0dXJuO1xuXHRcdFx0XHRcdHJldHVybiBuZXcgQ3Vyc29yKHZhbHVlLCBjdXJzb3IuX3JlcXVlc3QpO1xuXHRcdFx0XHR9KTtcblx0XHRcdH0pO1xuXHRcdH07XG5cdH0pO1xuXG5cdGZ1bmN0aW9uIE9iamVjdFN0b3JlKHN0b3JlKSB7XG5cdFx0dGhpcy5fc3RvcmUgPSBzdG9yZTtcblx0fVxuXG5cdE9iamVjdFN0b3JlLnByb3RvdHlwZS5jcmVhdGVJbmRleCA9IGZ1bmN0aW9uKCkge1xuXHRcdHJldHVybiBuZXcgSW5kZXgodGhpcy5fc3RvcmUuY3JlYXRlSW5kZXguYXBwbHkodGhpcy5fc3RvcmUsIGFyZ3VtZW50cykpO1xuXHR9O1xuXG5cdE9iamVjdFN0b3JlLnByb3RvdHlwZS5pbmRleCA9IGZ1bmN0aW9uKCkge1xuXHRcdHJldHVybiBuZXcgSW5kZXgodGhpcy5fc3RvcmUuaW5kZXguYXBwbHkodGhpcy5fc3RvcmUsIGFyZ3VtZW50cykpO1xuXHR9O1xuXG5cdHByb3h5UHJvcGVydGllcyhPYmplY3RTdG9yZSwgJ19zdG9yZScsIFtcblx0XHQnbmFtZScsXG5cdFx0J2tleVBhdGgnLFxuXHRcdCdpbmRleE5hbWVzJyxcblx0XHQnYXV0b0luY3JlbWVudCdcblx0XSk7XG5cblx0cHJveHlSZXF1ZXN0TWV0aG9kcyhPYmplY3RTdG9yZSwgJ19zdG9yZScsIElEQk9iamVjdFN0b3JlLCBbXG5cdFx0J3B1dCcsXG5cdFx0J2FkZCcsXG5cdFx0J2RlbGV0ZScsXG5cdFx0J2NsZWFyJyxcblx0XHQnZ2V0Jyxcblx0XHQnZ2V0QWxsJyxcblx0XHQnZ2V0S2V5Jyxcblx0XHQnZ2V0QWxsS2V5cycsXG5cdFx0J2NvdW50J1xuXHRdKTtcblxuXHRwcm94eUN1cnNvclJlcXVlc3RNZXRob2RzKE9iamVjdFN0b3JlLCAnX3N0b3JlJywgSURCT2JqZWN0U3RvcmUsIFtcblx0XHQnb3BlbkN1cnNvcicsXG5cdFx0J29wZW5LZXlDdXJzb3InXG5cdF0pO1xuXG5cdHByb3h5TWV0aG9kcyhPYmplY3RTdG9yZSwgJ19zdG9yZScsIElEQk9iamVjdFN0b3JlLCBbXG5cdFx0J2RlbGV0ZUluZGV4J1xuXHRdKTtcblxuXHRmdW5jdGlvbiBUcmFuc2FjdGlvbihpZGJUcmFuc2FjdGlvbikge1xuXHRcdHRoaXMuX3R4ID0gaWRiVHJhbnNhY3Rpb247XG5cdFx0dGhpcy5jb21wbGV0ZSA9IG5ldyBQcm9taXNlKGZ1bmN0aW9uKHJlc29sdmUsIHJlamVjdCkge1xuXHRcdFx0aWRiVHJhbnNhY3Rpb24ub25jb21wbGV0ZSA9IGZ1bmN0aW9uKCkge1xuXHRcdFx0XHRyZXNvbHZlKCk7XG5cdFx0XHR9O1xuXHRcdFx0aWRiVHJhbnNhY3Rpb24ub25lcnJvciA9IGZ1bmN0aW9uKCkge1xuXHRcdFx0XHRyZWplY3QoaWRiVHJhbnNhY3Rpb24uZXJyb3IpO1xuXHRcdFx0fTtcblx0XHRcdGlkYlRyYW5zYWN0aW9uLm9uYWJvcnQgPSBmdW5jdGlvbigpIHtcblx0XHRcdFx0cmVqZWN0KGlkYlRyYW5zYWN0aW9uLmVycm9yKTtcblx0XHRcdH07XG5cdFx0fSk7XG5cdH1cblxuXHRUcmFuc2FjdGlvbi5wcm90b3R5cGUub2JqZWN0U3RvcmUgPSBmdW5jdGlvbigpIHtcblx0XHRyZXR1cm4gbmV3IE9iamVjdFN0b3JlKHRoaXMuX3R4Lm9iamVjdFN0b3JlLmFwcGx5KHRoaXMuX3R4LCBhcmd1bWVudHMpKTtcblx0fTtcblxuXHRwcm94eVByb3BlcnRpZXMoVHJhbnNhY3Rpb24sICdfdHgnLCBbXG5cdFx0J29iamVjdFN0b3JlTmFtZXMnLFxuXHRcdCdtb2RlJ1xuXHRdKTtcblxuXHRwcm94eU1ldGhvZHMoVHJhbnNhY3Rpb24sICdfdHgnLCBJREJUcmFuc2FjdGlvbiwgW1xuXHRcdCdhYm9ydCdcblx0XSk7XG5cblx0ZnVuY3Rpb24gVXBncmFkZURCKGRiLCBvbGRWZXJzaW9uLCB0cmFuc2FjdGlvbikge1xuXHRcdHRoaXMuX2RiID0gZGI7XG5cdFx0dGhpcy5vbGRWZXJzaW9uID0gb2xkVmVyc2lvbjtcblx0XHR0aGlzLnRyYW5zYWN0aW9uID0gbmV3IFRyYW5zYWN0aW9uKHRyYW5zYWN0aW9uKTtcblx0fVxuXG5cdFVwZ3JhZGVEQi5wcm90b3R5cGUuY3JlYXRlT2JqZWN0U3RvcmUgPSBmdW5jdGlvbigpIHtcblx0XHRyZXR1cm4gbmV3IE9iamVjdFN0b3JlKHRoaXMuX2RiLmNyZWF0ZU9iamVjdFN0b3JlLmFwcGx5KHRoaXMuX2RiLCBhcmd1bWVudHMpKTtcblx0fTtcblxuXHRwcm94eVByb3BlcnRpZXMoVXBncmFkZURCLCAnX2RiJywgW1xuXHRcdCduYW1lJyxcblx0XHQndmVyc2lvbicsXG5cdFx0J29iamVjdFN0b3JlTmFtZXMnXG5cdF0pO1xuXG5cdHByb3h5TWV0aG9kcyhVcGdyYWRlREIsICdfZGInLCBJREJEYXRhYmFzZSwgW1xuXHRcdCdkZWxldGVPYmplY3RTdG9yZScsXG5cdFx0J2Nsb3NlJ1xuXHRdKTtcblxuXHRmdW5jdGlvbiBEQihkYikge1xuXHRcdHRoaXMuX2RiID0gZGI7XG5cdH1cblxuXHREQi5wcm90b3R5cGUudHJhbnNhY3Rpb24gPSBmdW5jdGlvbigpIHtcblx0XHRyZXR1cm4gbmV3IFRyYW5zYWN0aW9uKHRoaXMuX2RiLnRyYW5zYWN0aW9uLmFwcGx5KHRoaXMuX2RiLCBhcmd1bWVudHMpKTtcblx0fTtcblxuXHRwcm94eVByb3BlcnRpZXMoREIsICdfZGInLCBbXG5cdFx0J25hbWUnLFxuXHRcdCd2ZXJzaW9uJyxcblx0XHQnb2JqZWN0U3RvcmVOYW1lcydcblx0XSk7XG5cblx0cHJveHlNZXRob2RzKERCLCAnX2RiJywgSURCRGF0YWJhc2UsIFtcblx0XHQnY2xvc2UnXG5cdF0pO1xuXG5cdC8vIEFkZCBjdXJzb3IgaXRlcmF0b3JzXG5cdC8vIFRPRE86IHJlbW92ZSB0aGlzIG9uY2UgYnJvd3NlcnMgZG8gdGhlIHJpZ2h0IHRoaW5nIHdpdGggcHJvbWlzZXNcblx0WydvcGVuQ3Vyc29yJywgJ29wZW5LZXlDdXJzb3InXS5mb3JFYWNoKGZ1bmN0aW9uKGZ1bmNOYW1lKSB7XG5cdFx0W09iamVjdFN0b3JlLCBJbmRleF0uZm9yRWFjaChmdW5jdGlvbihDb25zdHJ1Y3Rvcikge1xuXHRcdFx0Ly8gRG9uJ3QgY3JlYXRlIGl0ZXJhdGVLZXlDdXJzb3IgaWYgb3BlbktleUN1cnNvciBkb2Vzbid0IGV4aXN0LlxuXHRcdFx0aWYgKCEoZnVuY05hbWUgaW4gQ29uc3RydWN0b3IucHJvdG90eXBlKSkgcmV0dXJuO1xuXG5cdFx0XHRDb25zdHJ1Y3Rvci5wcm90b3R5cGVbZnVuY05hbWUucmVwbGFjZSgnb3BlbicsICdpdGVyYXRlJyldID0gZnVuY3Rpb24oKSB7XG5cdFx0XHRcdHZhciBhcmdzID0gdG9BcnJheShhcmd1bWVudHMpO1xuXHRcdFx0XHR2YXIgY2FsbGJhY2sgPSBhcmdzW2FyZ3MubGVuZ3RoIC0gMV07XG5cdFx0XHRcdHZhciBuYXRpdmVPYmplY3QgPSB0aGlzLl9zdG9yZSB8fCB0aGlzLl9pbmRleDtcblx0XHRcdFx0dmFyIHJlcXVlc3QgPSBuYXRpdmVPYmplY3RbZnVuY05hbWVdLmFwcGx5KG5hdGl2ZU9iamVjdCwgYXJncy5zbGljZSgwLCAtMSkpO1xuXHRcdFx0XHRyZXF1ZXN0Lm9uc3VjY2VzcyA9IGZ1bmN0aW9uKCkge1xuXHRcdFx0XHRcdGNhbGxiYWNrKHJlcXVlc3QucmVzdWx0KTtcblx0XHRcdFx0fTtcblx0XHRcdH07XG5cdFx0fSk7XG5cdH0pO1xuXG5cdC8vIHBvbHlmaWxsIGdldEFsbFxuXHRbSW5kZXgsIE9iamVjdFN0b3JlXS5mb3JFYWNoKGZ1bmN0aW9uKENvbnN0cnVjdG9yKSB7XG5cdFx0aWYgKENvbnN0cnVjdG9yLnByb3RvdHlwZS5nZXRBbGwpIHJldHVybjtcblx0XHRDb25zdHJ1Y3Rvci5wcm90b3R5cGUuZ2V0QWxsID0gZnVuY3Rpb24ocXVlcnksIGNvdW50KSB7XG5cdFx0XHR2YXIgaW5zdGFuY2UgPSB0aGlzO1xuXHRcdFx0dmFyIGl0ZW1zID0gW107XG5cblx0XHRcdHJldHVybiBuZXcgUHJvbWlzZShmdW5jdGlvbihyZXNvbHZlKSB7XG5cdFx0XHRcdGluc3RhbmNlLml0ZXJhdGVDdXJzb3IocXVlcnksIGZ1bmN0aW9uKGN1cnNvcikge1xuXHRcdFx0XHRcdGlmICghY3Vyc29yKSB7XG5cdFx0XHRcdFx0XHRyZXNvbHZlKGl0ZW1zKTtcblx0XHRcdFx0XHRcdHJldHVybjtcblx0XHRcdFx0XHR9XG5cdFx0XHRcdFx0aXRlbXMucHVzaChjdXJzb3IudmFsdWUpO1xuXG5cdFx0XHRcdFx0aWYgKGNvdW50ICE9PSB1bmRlZmluZWQgJiYgaXRlbXMubGVuZ3RoID09IGNvdW50KSB7XG5cdFx0XHRcdFx0XHRyZXNvbHZlKGl0ZW1zKTtcblx0XHRcdFx0XHRcdHJldHVybjtcblx0XHRcdFx0XHR9XG5cdFx0XHRcdFx0Y3Vyc29yLmNvbnRpbnVlKCk7XG5cdFx0XHRcdH0pO1xuXHRcdFx0fSk7XG5cdFx0fTtcblx0fSk7XG5cblx0dmFyIGV4cCA9IHtcblx0XHRvcGVuOiBmdW5jdGlvbihuYW1lLCB2ZXJzaW9uLCB1cGdyYWRlQ2FsbGJhY2spIHtcblx0XHRcdHZhciBwID0gcHJvbWlzaWZ5UmVxdWVzdENhbGwoaW5kZXhlZERCLCAnb3BlbicsIFtuYW1lLCB2ZXJzaW9uXSk7XG5cdFx0XHR2YXIgcmVxdWVzdCA9IHAucmVxdWVzdDtcblxuXHRcdFx0aWYgKHJlcXVlc3QpIHtcblx0XHRcdFx0cmVxdWVzdC5vbnVwZ3JhZGVuZWVkZWQgPSBmdW5jdGlvbihldmVudCkge1xuXHRcdFx0XHRcdGlmICh1cGdyYWRlQ2FsbGJhY2spIHtcblx0XHRcdFx0XHRcdHVwZ3JhZGVDYWxsYmFjayhuZXcgVXBncmFkZURCKHJlcXVlc3QucmVzdWx0LCBldmVudC5vbGRWZXJzaW9uLCByZXF1ZXN0LnRyYW5zYWN0aW9uKSk7XG5cdFx0XHRcdFx0fVxuXHRcdFx0XHR9O1xuXHRcdFx0fVxuXG5cdFx0XHRyZXR1cm4gcC50aGVuKGZ1bmN0aW9uKGRiKSB7XG5cdFx0XHRcdHJldHVybiBuZXcgREIoZGIpO1xuXHRcdFx0fSk7XG5cdFx0fSxcblx0XHRkZWxldGU6IGZ1bmN0aW9uKG5hbWUpIHtcblx0XHRcdHJldHVybiBwcm9taXNpZnlSZXF1ZXN0Q2FsbChpbmRleGVkREIsICdkZWxldGVEYXRhYmFzZScsIFtuYW1lXSk7XG5cdFx0fVxuXHR9O1xuXG5cdGlmICh0eXBlb2YgbW9kdWxlICE9PSAndW5kZWZpbmVkJykge1xuXHRcdG1vZHVsZS5leHBvcnRzID0gZXhwO1xuXHRcdG1vZHVsZS5leHBvcnRzLmRlZmF1bHQgPSBtb2R1bGUuZXhwb3J0cztcblx0fVxuXHRlbHNlIHtcblx0XHRzZWxmLmlkYiA9IGV4cDtcblx0fVxufSgpKTtcbiIsInZhciBBUElfVVJMID0gJ2h0dHA6Ly9sb2NhbGhvc3Q6MTMzNy9yZXN0YXVyYW50cyc7XG52YXIgZmV0Y2hTdGF0dXMgPSAwO1xuXG4vLyBIZWxwZXIgRnVuY3Rpb25zIGZvciB2YXJpb3VzIElEYiBPcGVyYXRpb25zXG5jbGFzcyBJRGJPcGVyYXRpb25zSGVscGVyIHtcblx0c3RhdGljIGNoZWNrRm9ySURiU3VwcG9ydCgpIHtcblx0XHRpZiAoISgnaW5kZXhlZERCJyBpbiB3aW5kb3cpKSB7XG5cdFx0XHRyZXR1cm4gMDtcblx0XHR9IGVsc2Uge1xuXHRcdFx0cmV0dXJuIDE7XG5cdFx0fVxuXHR9XG5cblx0c3RhdGljIG9wZW5JRGIobmFtZSwgdmVyc2lvbiwgb2JqZWN0U3RvcmVOYW1lKSB7XG5cdFx0dmFyIGRiUHJvbWlzZSA9IGlkYi5vcGVuKG5hbWUsIHZlcnNpb24sIHVwZ3JhZGVEQiA9PiB7XG5cdFx0XHR1cGdyYWRlREIuY3JlYXRlT2JqZWN0U3RvcmUob2JqZWN0U3RvcmVOYW1lLCB7IGF1dG9JbmNyZW1lbnQ6IHRydWUgfSk7XG5cdFx0fSk7XG5cdFx0cmV0dXJuIGRiUHJvbWlzZTtcblx0fVxuXG5cdHN0YXRpYyBhZGRUb0RiKGRiUHJvbWlzZSwgb2JqZWN0U3RvcmVOYW1lLCBwZXJtaXNpb24sIGpzb25EYXRhKSB7XG5cdFx0ZGJQcm9taXNlLnRoZW4oZGIgPT4ge1xuXHRcdFx0dmFyIHRyYW5zYWN0ID0gZGIudHJhbnNhY3Rpb24ob2JqZWN0U3RvcmVOYW1lLCBwZXJtaXNpb24pO1xuXHRcdFx0Ly9BZGQgYWxsIHRoZSBqc29uIGNvbnRlbnQgaGVyZVxuXHRcdFx0dHJhbnNhY3Qub2JqZWN0U3RvcmUob2JqZWN0U3RvcmVOYW1lKS5wdXQoanNvbkRhdGEpO1xuXHRcdFx0cmV0dXJuIHRyYW5zYWN0LmNvbXBsZXRlO1xuXHRcdH0pLnRoZW4ocmVzcG9uc2UgPT4ge1xuXHRcdFx0Y29uc29sZS5sb2coJ1Jlc3RhdXJhbnQgc2F2ZWQgdG8gSURiJyk7XG5cdFx0fSk7XG5cdH1cblxuXHRzdGF0aWMgZ2V0QWxsRGF0YShkYlByb21pc2UsIHRyYW5zYWN0aW9uTmFtZSwgb2JqZWN0U3RvcmVOYW1lKSB7XG5cdFx0dmFyIHJlc3BvbnNlQXJyYXlQcm9taXNlID0gZGJQcm9taXNlLnRoZW4oZGIgPT4gZGJcblx0XHRcdC50cmFuc2FjdGlvbih0cmFuc2FjdGlvbk5hbWUpXG5cdFx0XHQub2JqZWN0U3RvcmUob2JqZWN0U3RvcmVOYW1lKVxuXHRcdFx0LmdldEFsbCgpXG5cdFx0KTtcblx0XHRyZXNwb25zZUFycmF5UHJvbWlzZS50aGVuKGFycnkgPT4ge1xuXHRcdFx0SURiT3BlcmF0aW9uc0hlbHBlci5zZXRSZXN0YXVyYW50c0RhdGEoYXJyeSk7XG5cdFx0fSk7XG5cdH1cblxuXHRzdGF0aWMgZ2V0UmVzdGF1cmFudHNGcm9tU2VydmVyKGRiUHJvbWlzZSwgb2JqZWN0U3RvcmVOYW1lLCBwZXJtaXNpb24sIGNhbGxiYWNrKSB7XG5cdFx0ZmV0Y2goQVBJX1VSTClcblx0XHRcdC50aGVuKHJlc3BvbnNlID0+IHJlc3BvbnNlLmpzb24oKSlcblx0XHRcdC50aGVuKHJlc3BvbnNlSnNvbiA9PiB7XG5cdFx0XHRcdHJlc3BvbnNlSnNvbi5mb3JFYWNoKHJlc3RhdXJhbnQgPT4ge1xuXHRcdFx0XHRcdHJlc3RhdXJhbnQgPSBJRGJPcGVyYXRpb25zSGVscGVyLmFkZE1pc3NpbmdEYXRhKHJlc3RhdXJhbnQpO1xuXHRcdFx0XHR9KTtcblxuXHRcdFx0XHRpZiAoZmV0Y2hTdGF0dXMgIT0gMSkge1xuXHRcdFx0XHRcdGZldGNoU3RhdHVzID0gMTtcblx0XHRcdFx0XHRyZXNwb25zZUpzb24uZm9yRWFjaChyZXN0YXVyYW50RGF0YSA9PiB7XG5cblx0XHRcdFx0XHRcdC8vQWRkIGV2ZXJ5IHNpbmdsZSByZXN0YXVyYW50IGRhdGEgdG8gSURiXG5cdFx0XHRcdFx0XHRJRGJPcGVyYXRpb25zSGVscGVyLmFkZFRvRGIoXG5cdFx0XHRcdFx0XHRcdGRiUHJvbWlzZSxcblx0XHRcdFx0XHRcdFx0b2JqZWN0U3RvcmVOYW1lLFxuXHRcdFx0XHRcdFx0XHRwZXJtaXNpb24sXG5cdFx0XHRcdFx0XHRcdHJlc3RhdXJhbnREYXRhXG5cdFx0XHRcdFx0XHQpO1xuXHRcdFx0XHRcdH0pO1xuXHRcdFx0XHR9XG5cblx0XHRcdFx0Y29uc29sZS5sb2cocmVzcG9uc2VKc29uKTtcblx0XHRcdFx0Y2FsbGJhY2sgKG51bGwsIHJlc3BvbnNlSnNvbik7XG5cdFx0XHR9KS5jYXRjaChlcnJvciA9PiB7XG5cdFx0XHRcdGNvbnNvbGUubG9nKGBVbmFibGUgdG8gZmV0Y2ggcmVzdGF1cmFudHMsIEVycm9yOiAke2Vycm9yfWApO1xuXHRcdFx0XHRjYWxsYmFjayAoZXJyb3IsIG51bGwpO1xuXHRcdFx0fSk7XG5cdH1cblxuXHRzdGF0aWMgZ2V0UmVzdGF1cmFudHNEYXRhKGNhbGxiYWNrKSB7XG5cdFx0dmFyIGlkYk5hbWUgPSAncmVzdGF1cmFudHMtZGF0YSc7XG5cdFx0dmFyIGRiVmVyc2lvbiA9IDE7XG5cdFx0dmFyIG9iamVjdFN0b3JlTmFtZVN0cmluZyA9ICdyZXN0YXVyYW50cyc7XG5cdFx0dmFyIHRyYW5zYWN0aW9uTmFtZVN0cmluZyA9ICdyZXN0YXVyYW50cyc7XG5cdFx0dmFyIGRiUGVybWlzc2lvbiA9ICdyZWFkd3JpdGUnO1xuXG5cdFx0dmFyIGRiUHJvbWlzZSA9IElEYk9wZXJhdGlvbnNIZWxwZXIub3BlbklEYihcblx0XHRcdGlkYk5hbWUsXG5cdFx0XHRkYlZlcnNpb24sXG5cdFx0XHRvYmplY3RTdG9yZU5hbWVTdHJpbmdcblx0XHQpO1xuXG5cdFx0ZGJQcm9taXNlLnRoZW4oZGIgPT5cblx0XHRcdGRiLnRyYW5zYWN0aW9uKHRyYW5zYWN0aW9uTmFtZVN0cmluZylcblx0XHRcdFx0Lm9iamVjdFN0b3JlKG9iamVjdFN0b3JlTmFtZVN0cmluZylcblx0XHRcdFx0LmdldEFsbCgpXG5cdFx0KS50aGVuKHJlc3BvbnNlT2JlamN0cyA9PiB7XG5cdFx0XHRpZiAocmVzcG9uc2VPYmVqY3RzLmxlbmd0aCA8PSAwKSB7XG5cdFx0XHRcdElEYk9wZXJhdGlvbnNIZWxwZXIuZ2V0UmVzdGF1cmFudHNGcm9tU2VydmVyKFxuXHRcdFx0XHRcdGRiUHJvbWlzZSxcblx0XHRcdFx0XHRvYmplY3RTdG9yZU5hbWVTdHJpbmcsXG5cdFx0XHRcdFx0ZGJQZXJtaXNzaW9uLFxuXHRcdFx0XHRcdGNhbGxiYWNrXG5cdFx0XHRcdCk7XG5cdFx0XHR9IGVsc2Uge1xuXHRcdFx0XHRjYWxsYmFjayhudWxsLCByZXNwb25zZU9iZWpjdHMpO1xuXHRcdFx0fVxuXHRcdH0pO1xuXHR9XG5cblx0Ly8gSGFuZGxlIGZvciBsYXN0IGVudHJ5IG9uIFJlc3RhdXJhbnRzIExpc3Rcblx0c3RhdGljIGFkZE1pc3NpbmdEYXRhKHJlc3RKc29uKSB7XG5cdFx0aWYgKCFpc05hTihyZXN0SnNvbi5waG90b2dyYXBoKSkge1xuXHRcdFx0cmVzdEpzb24ucGhvdG9ncmFwaCA9IHJlc3RKc29uLnBob3RvZ3JhcGggKyAnLmpwZyc7XG5cdFx0fSBlbHNlIHtcblx0XHRcdHJlc3RKc29uWydwaG90b2dyYXBoJ10gPSByZXN0SnNvbi5pZCArICcuanBnJztcblx0XHR9XG5cdFx0cmV0dXJuIHJlc3RKc29uO1xuXHR9XG59XG4iLCIvLyBDb21tb24gZGF0YWJhc2UgaGVscGVyIGZ1bmN0aW9ucy5cbmNsYXNzIERCSGVscGVyIHtcblx0c3RhdGljIGdldCBORVdfVVJMKCkge1xuXHRcdHJldHVybiAnaHR0cDovL2xvY2FsaG9zdDoxMzM3L3Jlc3RhdXJhbnRzJztcblx0fVxuXHQvKipcbiAgICAgKiBGZXRjaCBhIHJlc3RhdXJhbnQgYnkgaXRzIElELlxuICAgICAqL1xuXHRzdGF0aWMgZmV0Y2hSZXN0YXVyYW50QnlJZChpZCwgY2FsbGJhY2spIHtcblx0XHQvLyBmZXRjaCBhbGwgcmVzdGF1cmFudHMgd2l0aCBwcm9wZXIgZXJyb3IgaGFuZGxpbmcuXG5cdFx0SURiT3BlcmF0aW9uc0hlbHBlci5nZXRSZXN0YXVyYW50c0RhdGEoKGVycm9yLCByZXN0YXVyYW50cykgPT4ge1xuXHRcdFx0aWYgKGVycm9yKSB7XG5cdFx0XHRcdGNhbGxiYWNrKGVycm9yLCBudWxsKTtcblx0XHRcdH0gZWxzZSB7XG5cdFx0XHRcdGNvbnN0IHJlc3RhdXJhbnQgPSByZXN0YXVyYW50cy5maW5kKHIgPT4gci5pZCA9PSBpZCk7XG5cdFx0XHRcdGlmIChyZXN0YXVyYW50KSB7XG5cdFx0XHRcdFx0Ly8gR290IHRoZSByZXN0YXVyYW50XG5cdFx0XHRcdFx0Y2FsbGJhY2sobnVsbCwgcmVzdGF1cmFudCk7XG5cdFx0XHRcdH0gZWxzZSB7XG5cdFx0XHRcdFx0Ly8gUmVzdGF1cmFudCBkb2VzIG5vdCBleGlzdCBpbiB0aGUgZGF0YWJhc2Vcblx0XHRcdFx0XHRjYWxsYmFjaygnUmVzdGF1cmFudCBkb2VzIG5vdCBleGlzdCcsIG51bGwpO1xuXHRcdFx0XHR9XG5cdFx0XHR9XG5cdFx0fSk7XG5cdH1cblxuXHQvKipcbiAgICAgKiBGZXRjaCByZXN0YXVyYW50cyBieSBhIGN1aXNpbmUgdHlwZSB3aXRoIHByb3BlciBlcnJvciBoYW5kbGluZy5cbiAgICAgKi9cblx0c3RhdGljIGZldGNoUmVzdGF1cmFudEJ5Q3Vpc2luZShjdWlzaW5lLCBjYWxsYmFjaykge1xuXHRcdC8vIEZldGNoIGFsbCByZXN0YXVyYW50cyAgd2l0aCBwcm9wZXIgZXJyb3IgaGFuZGxpbmdcblx0XHRJRGJPcGVyYXRpb25zSGVscGVyLmdldFJlc3RhdXJhbnRzRGF0YSgoZXJyb3IsIHJlc3RhdXJhbnRzKSA9PiB7XG5cdFx0XHRpZiAoZXJyb3IpIHtcblx0XHRcdFx0Y2FsbGJhY2soZXJyb3IsIG51bGwpO1xuXHRcdFx0fSBlbHNlIHtcblx0XHRcdFx0Ly8gRmlsdGVyIHJlc3RhdXJhbnRzIHRvIGhhdmUgb25seSBnaXZlbiBjdWlzaW5lIHR5cGVcblx0XHRcdFx0Y29uc3QgcmVzdWx0cyA9IHJlc3RhdXJhbnRzLmZpbHRlcihyID0+IHIuY3Vpc2luZV90eXBlID09IGN1aXNpbmUpO1xuXHRcdFx0XHRjYWxsYmFjayhudWxsLCByZXN1bHRzKTtcblx0XHRcdH1cblx0XHR9KTtcblx0fVxuXG5cdC8qKlxuICAgICAqIEZldGNoIHJlc3RhdXJhbnRzIGJ5IGEgbmVpZ2hib3Job29kIHdpdGggcHJvcGVyIGVycm9yIGhhbmRsaW5nLlxuICAgICAqL1xuXHRzdGF0aWMgZmV0Y2hSZXN0YXVyYW50QnlOZWlnaGJvcmhvb2QobmVpZ2hib3Job29kLCBjYWxsYmFjaykge1xuXHRcdC8vIEZldGNoIGFsbCByZXN0YXVyYW50c1xuXHRcdElEYk9wZXJhdGlvbnNIZWxwZXIuZ2V0UmVzdGF1cmFudHNEYXRhKChlcnJvciwgcmVzdGF1cmFudHMpID0+IHtcblx0XHRcdGlmIChlcnJvcikge1xuXHRcdFx0XHRjYWxsYmFjayhlcnJvciwgbnVsbCk7XG5cdFx0XHR9IGVsc2Uge1xuXHRcdFx0XHQvLyBGaWx0ZXIgcmVzdGF1cmFudHMgdG8gaGF2ZSBvbmx5IGdpdmVuIG5laWdoYm9yaG9vZFxuXHRcdFx0XHRjb25zdCByZXN1bHRzID0gcmVzdGF1cmFudHMuZmlsdGVyKHIgPT4gci5uZWlnaGJvcmhvb2QgPT0gbmVpZ2hib3Job29kKTtcblx0XHRcdFx0Y2FsbGJhY2sobnVsbCwgcmVzdWx0cyk7XG5cdFx0XHR9XG5cdFx0fSk7XG5cdH1cblxuXHQvKipcbiAgICAgKiBGZXRjaCByZXN0YXVyYW50cyBieSBhIGN1aXNpbmUgYW5kIGEgbmVpZ2hib3Job29kIHdpdGggcHJvcGVyIGVycm9yIGhhbmRsaW5nLlxuICAgICAqL1xuXHRzdGF0aWMgZmV0Y2hSZXN0YXVyYW50QnlDdWlzaW5lQW5kTmVpZ2hib3Job29kKFxuXHRcdGN1aXNpbmUsXG5cdFx0bmVpZ2hib3Job29kLFxuXHRcdGNhbGxiYWNrXG5cdCkge1xuXHRcdC8vIEZldGNoIGFsbCByZXN0YXVyYW50c1xuXHRcdElEYk9wZXJhdGlvbnNIZWxwZXIuZ2V0UmVzdGF1cmFudHNEYXRhKChlcnJvciwgcmVzdGF1cmFudHMpID0+IHtcblx0XHRcdGlmIChlcnJvcikge1xuXHRcdFx0XHRjYWxsYmFjayhlcnJvciwgbnVsbCk7XG5cdFx0XHR9IGVsc2Uge1xuXHRcdFx0XHRsZXQgcmVzdWx0cyA9IHJlc3RhdXJhbnRzO1xuXHRcdFx0XHRpZiAoY3Vpc2luZSAhPSAnYWxsJykge1xuXHRcdFx0XHRcdC8vIGZpbHRlciBieSBjdWlzaW5lXG5cdFx0XHRcdFx0cmVzdWx0cyA9IHJlc3VsdHMuZmlsdGVyKHIgPT4gci5jdWlzaW5lX3R5cGUgPT0gY3Vpc2luZSk7XG5cdFx0XHRcdH1cblx0XHRcdFx0aWYgKG5laWdoYm9yaG9vZCAhPSAnYWxsJykge1xuXHRcdFx0XHRcdC8vIGZpbHRlciBieSBuZWlnaGJvcmhvb2Rcblx0XHRcdFx0XHRyZXN1bHRzID0gcmVzdWx0cy5maWx0ZXIociA9PiByLm5laWdoYm9yaG9vZCA9PSBuZWlnaGJvcmhvb2QpO1xuXHRcdFx0XHR9XG5cdFx0XHRcdGNhbGxiYWNrKG51bGwsIHJlc3VsdHMpO1xuXHRcdFx0fVxuXHRcdH0pO1xuXHR9XG5cblx0LyoqXG4gICAgICogRmV0Y2ggYWxsIG5laWdoYm9yaG9vZHMgd2l0aCBwcm9wZXIgZXJyb3IgaGFuZGxpbmcuXG4gICAgICovXG5cdHN0YXRpYyBmZXRjaE5laWdoYm9yaG9vZHMoY2FsbGJhY2spIHtcblx0XHQvLyBGZXRjaCBhbGwgcmVzdGF1cmFudHNcblx0XHRJRGJPcGVyYXRpb25zSGVscGVyLmdldFJlc3RhdXJhbnRzRGF0YSgoZXJyb3IsIHJlc3RhdXJhbnRzKSA9PiB7XG5cdFx0XHRpZiAoZXJyb3IpIHtcblx0XHRcdFx0Y2FsbGJhY2soZXJyb3IsIG51bGwpO1xuXHRcdFx0fSBlbHNlIHtcblx0XHRcdFx0Ly8gR2V0IGFsbCBuZWlnaGJvcmhvb2RzIGZyb20gYWxsIHJlc3RhdXJhbnRzXG5cdFx0XHRcdGNvbnN0IG5laWdoYm9yaG9vZHMgPSByZXN0YXVyYW50cy5tYXAoXG5cdFx0XHRcdFx0KHYsIGkpID0+IHJlc3RhdXJhbnRzW2ldLm5laWdoYm9yaG9vZFxuXHRcdFx0XHQpO1xuXHRcdFx0XHQvLyBSZW1vdmUgZHVwbGljYXRlcyBmcm9tIG5laWdoYm9yaG9vZHNcblx0XHRcdFx0Y29uc3QgdW5pcXVlTmVpZ2hib3Job29kcyA9IG5laWdoYm9yaG9vZHMuZmlsdGVyKFxuXHRcdFx0XHRcdCh2LCBpKSA9PiBuZWlnaGJvcmhvb2RzLmluZGV4T2YodikgPT0gaVxuXHRcdFx0XHQpO1xuXHRcdFx0XHRjYWxsYmFjayhudWxsLCB1bmlxdWVOZWlnaGJvcmhvb2RzKTtcblx0XHRcdH1cblx0XHR9KTtcblx0fVxuXG5cdC8qKlxuICAgICAqIEZldGNoIGFsbCBjdWlzaW5lcyB3aXRoIHByb3BlciBlcnJvciBoYW5kbGluZy5cbiAgICAgKi9cblx0c3RhdGljIGZldGNoQ3Vpc2luZXMoY2FsbGJhY2spIHtcblx0XHQvLyBGZXRjaCBhbGwgcmVzdGF1cmFudHNcblx0XHRJRGJPcGVyYXRpb25zSGVscGVyLmdldFJlc3RhdXJhbnRzRGF0YSgoZXJyb3IsIHJlc3RhdXJhbnRzKSA9PiB7XG5cdFx0XHRpZiAoZXJyb3IpIHtcblx0XHRcdFx0Y2FsbGJhY2soZXJyb3IsIG51bGwpO1xuXHRcdFx0fSBlbHNlIHtcblx0XHRcdFx0Ly8gR2V0IGFsbCBjdWlzaW5lcyBmcm9tIGFsbCByZXN0YXVyYW50c1xuXHRcdFx0XHRjb25zdCBjdWlzaW5lcyA9IHJlc3RhdXJhbnRzLm1hcCgodiwgaSkgPT4gcmVzdGF1cmFudHNbaV0uY3Vpc2luZV90eXBlKTtcblx0XHRcdFx0Ly8gUmVtb3ZlIGR1cGxpY2F0ZXMgZnJvbSBjdWlzaW5lc1xuXHRcdFx0XHRjb25zdCB1bmlxdWVDdWlzaW5lcyA9IGN1aXNpbmVzLmZpbHRlcihcblx0XHRcdFx0XHQodiwgaSkgPT4gY3Vpc2luZXMuaW5kZXhPZih2KSA9PSBpXG5cdFx0XHRcdCk7XG5cdFx0XHRcdGNhbGxiYWNrKG51bGwsIHVuaXF1ZUN1aXNpbmVzKTtcblx0XHRcdH1cblx0XHR9KTtcblx0fVxuXG5cdC8qKlxuICAgICAqIFJlc3RhdXJhbnQgcGFnZSBVUkwuXG4gICAgICovXG5cdHN0YXRpYyB1cmxGb3JSZXN0YXVyYW50KHJlc3RhdXJhbnQpIHtcblx0XHRyZXR1cm4gYC4vcmVzdGF1cmFudC5odG1sP2lkPSR7cmVzdGF1cmFudC5pZH1gO1xuXHR9XG5cblx0LyoqXG4gICAgICogUmVzdGF1cmFudCBpbWFnZSBVUkwuXG4gICAgICovXG5cdHN0YXRpYyBpbWFnZVVybEZvclJlc3RhdXJhbnQocmVzdGF1cmFudCkge1xuXHRcdHJldHVybiBgL2ltZy8ke3Jlc3RhdXJhbnQucGhvdG9ncmFwaH1gO1xuXHR9XG5cblx0LyoqXG4gICAgICogTWFwIG1hcmtlciBmb3IgYSByZXN0YXVyYW50LlxuICAgICAqL1xuXHRzdGF0aWMgbWFwTWFya2VyRm9yUmVzdGF1cmFudChyZXN0YXVyYW50LCBtYXApIHtcblx0XHRjb25zdCBtYXJrZXIgPSBuZXcgTC5tYXJrZXIoXG5cdFx0XHRbcmVzdGF1cmFudC5sYXRsbmcubGF0LCByZXN0YXVyYW50LmxhdGxuZy5sbmddLFxuXHRcdFx0e1xuXHRcdFx0XHR0aXRsZTogcmVzdGF1cmFudC5uYW1lLFxuXHRcdFx0XHRhbHQ6IHJlc3RhdXJhbnQubmFtZSxcblx0XHRcdFx0dXJsOiBEQkhlbHBlci51cmxGb3JSZXN0YXVyYW50KHJlc3RhdXJhbnQpXG5cdFx0XHR9XG5cdFx0KTtcblx0XHRtYXJrZXIuYWRkVG8obmV3TWFwKTtcblx0XHRyZXR1cm4gbWFya2VyO1xuXHR9XG59XG4iXX0=
