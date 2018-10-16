@@ -55,7 +55,7 @@ article, aside, canvas, details, figcaption, figure, footer, header, hgroup, men
 }
 #footer {
     background-color: #444;
-    color: #aaa;
+    color: #bbb;
     font-size: 8pt;
     letter-spacing: 1px;
     padding: 25px 0;
@@ -103,13 +103,13 @@ nav h1 a {
 
 /* Add a color to all links inside the list */
 #breadcrumb li a {
-    color: #0275d8;
+    color: #0063b9;
     text-decoration: none;
 }
 
 /* Add a color on mouse-over */
 #breadcrumb li a:hover {
-    color: #01447e;
+    color: #0063b9;
     text-decoration: underline;
 }
 /* ====================== Map ====================== */
@@ -127,7 +127,7 @@ nav h1 a {
     align-items: center;
 }
 .filter-options h2 {
-    color: white;
+    color: #000;
     font-size: 1rem;
     font-weight: normal;
     line-height: 1;
@@ -149,11 +149,11 @@ nav h1 a {
 }
 .filter-options select option{
     background-color: #fff;
-    color: #444;
+    color: #303030;
 }
 .filter-options select:hover, .filter-options select:focus {
-    border-color: #fff;
-    color: #fff;
+    border-color: #303030;
+    color: #000;
 }
 
 /* ====================== Restaurant Listing ====================== */
@@ -213,7 +213,7 @@ nav h1 a {
 #restaurants-list li a {
     background-color: orange;
     border-bottom: 3px solid #eee;
-    color: #fff;
+    color: #444444;
     display: inline-block;
     font-size: 10pt;
     margin: 15px 0 0;
@@ -226,7 +226,7 @@ nav h1 a {
     border-color: #aaa;
 }
 .rest-address {
-    color: #777;
+    color: #666;
     font-size: 1em !important
 }
 
@@ -256,7 +256,7 @@ nav h1 a {
     width: 100%;
 }
 #restaurant-name {
-    color: #f18200;
+    color: #d27100;
     font-family: Arial,sans-serif;
     font-size: 20pt;
     font-weight: 200;
@@ -331,7 +331,7 @@ nav h1 a {
     color: #444;
 }
 .review-date {
-    color: #777;
+    color: #757575;
 }
 .review-rating {
     color: #555;
@@ -449,4 +449,9 @@ i {
 .fallback-image-icon {
     font-size: 2em;
     text-align: center;
+}
+
+/* Overriding style of the leflat CSS for better contrast ratio */
+.leaflet-container a {
+    color: #006892;
 }
