@@ -45,9 +45,9 @@ gulp.task('default', gulp.series('css', 'js', function(done) {
 	gulp.watch('css/*.css', gulp.parallel('css'));
 	gulp.watch('js/ *.js', gulp.parallel('js'));
 
-	// browserSync.init({
-	//     server: './'
-	// });
+	browserSync.init({
+	    server: './'
+	});
 	done();
 }));
 
