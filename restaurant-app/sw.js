@@ -52,7 +52,7 @@ self.addEventListener('fetch', function(event) {
     event.respondWith(fromNetwork(event.request, 4000)
         .then(res => {
             console.log(`Request success! ${res}`);
-            addToCache(event.request);
+            // addToCache(event.request);
             return res;
         }).catch(err => {
             console.log(`Failed N/W request ${event.request.url}, Error: ${err}`);

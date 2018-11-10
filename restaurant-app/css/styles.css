@@ -178,6 +178,7 @@ nav h1 a {
     text-align: left;
     width: 300px;
     transition: all 0.2s ease-in;
+    position: relative;
 }
 #restaurants-list li:hover {
     box-shadow: 0px 0px 7px 1px #cecece;
@@ -455,6 +456,27 @@ i {
 .leaflet-container a {
     color: #006892;
 }
+
+/* Style for favourite button */
+.fav-btn {
+    font-size: 1.5em;
+    position: absolute;
+    right: 0;
+    top: 54%;
+    color: #949494;
+    background-color: #fff;
+    height: 2em;
+    width: 2em;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.fav-btn-active {
+    color: red;
+}
+
 
 /* Style for review form */
 .review-form {

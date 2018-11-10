@@ -21,9 +21,9 @@
           "Sunday": "12:00 pm - 4:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095563444,
-        "updatedAt": "2017-09-14T14:01:27.653Z",
+        "updatedAt": "2018-11-10T13:17:56.791Z",
         "id": 1,
-        "is_favorite": false
+        "is_favorite": "false"
       },
       {
         "name": "Emily",
@@ -45,8 +45,8 @@
           "Sunday": "12:00 pm - 3:00 pm, 5:00 pm - 11:00 pm"
         },
         "createdAt": 1504095568414,
-        "updatedAt": "2017-09-14T14:05:54.800Z",
-        "is_favorite": false,
+        "updatedAt": "2018-11-10T12:39:23.135Z",
+        "is_favorite": "true",
         "id": 2
       },
       {
@@ -69,8 +69,9 @@
           "Sunday": "11:30 am - 2:00 am"
         },
         "createdAt": 1504095571434,
-        "updatedAt": 1504095571434,
-        "id": 3
+        "updatedAt": "2018-11-10T13:17:05.084Z",
+        "id": 3,
+        "is_favorite": "false"
       },
       {
         "name": "Katz's Delicatessen",
@@ -92,8 +93,8 @@
           "Sunday": "Sat - 10:30 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": 1504095567091,
-        "is_favorite": false,
+        "updatedAt": "2018-11-10T13:21:49.042Z",
+        "is_favorite": "true",
         "id": 4
       },
       {
@@ -140,8 +141,8 @@
           "Sunday": "12:00 pm - 9:00 pm"
         },
         "createdAt": 1504095567071,
-        "updatedAt": 1504095567071,
-        "is_favorite": false,
+        "updatedAt": "2018-11-10T13:10:11.647Z",
+        "is_favorite": "true",
         "id": 6
       },
       {
@@ -164,8 +165,8 @@
           "Sunday": "11:30 am - 10:00 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": 1504095567091,
-        "is_favorite": false,
+        "updatedAt": "2018-11-10T13:17:09.490Z",
+        "is_favorite": "false",
         "id": 7
       },
       {
@@ -188,8 +189,8 @@
           "Sunday": "10:00 am - 3:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": 1504095567091,
-        "is_favorite": false,
+        "updatedAt": "2018-11-10T13:10:21.080Z",
+        "is_favorite": "true",
         "id": 8
       },
       {
@@ -235,8 +236,8 @@
           "Sunday": "11:00 am - 12:00 am"
         },
         "createdAt": 1504095567183,
-        "updatedAt": 1504095567183,
-        "is_favorite": false,
+        "updatedAt": "2018-11-10T13:15:02.931Z",
+        "is_favorite": "true",
         "id": 10
       }
     ],

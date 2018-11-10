@@ -157,6 +157,7 @@
  */
  createRestaurantHTML = (restaurant) => {
 	const li = document.createElement('li');
+	li.className = 'rest-card';
 	li.setAttribute('tabindex', 0);
 
 	const image = document.createElement('img');
@@ -169,6 +170,24 @@
 	image.alt = `${restaurant.name} restaurant image`;
 	image.setAttribute('tabindex', 0);
 	li.append(image);
+
+	const favBtn = document.createElement('i');
+	favBtn.className = 'fav-btn fa fa-heart';
+	favBtn.setAttribute('tabindex', 0);
+	if (restaurant.is_favorite) favBtn.classList.add('fav-btn-active');
+	li.append(favBtn);
+
+	favBtn.addEventListener('click', e => {
+		if (restaurant.is_favorite) {
+			addRestaurantToFavourite(restaurant, false);
+			restaurant.is_favorite = false;
+			favBtn.classList.remove('fav-btn-active');
+		} else {
+			addRestaurantToFavourite(restaurant, true);
+			restaurant.is_favorite = true;
+			favBtn.classList.add('fav-btn-active');
+		}
+	})
 
 	const details = document.createElement('div');
 	details.className = 'restaurant-details';
@@ -214,19 +233,13 @@
 	});
 
  };
-/* addMarkersToMap = (restaurants = self.restaurants) => {
-  restaurants.forEach(restaurant => {
-	// Add marker to the map
-	const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);
-	google.maps.event.addListener(marker, 'click', () => {
-	  window.location.href = marker.url
-	});
-	self.markers.push(marker);
-  });
-} */
 
-
-/* Manage focus and tabindex on filter options */
-
+/* Handle favourite Button*/
+addRestaurantToFavourite = (restaurant, flag) => {
+	fetch(`http://localhost:1337/restaurants/${restaurant.id}/?is_favorite=${flag}`, {
+		method: 'PUT'
+	}).then(res => console.log(res))
+	.catch(err => console.log(err));
+}
 
 
