@@ -24,22 +24,22 @@ var cacheFiles = [
 ];
 
 self.addEventListener('install',function (e) {
-    console.log("[ Service Worker Installed ]");
+    console.log("*** Service Worker Installed ***");
     e.waitUntil(
         caches.open(cacheName).then(function (cache) {
-            console.log("Service Worker caching cache files");
+            console.log("*** Service Worker caching static files ***");
             return cache.addAll(cacheFiles);
         })
     )
 });
 
 self.addEventListener('activate',function (e) {
-    console.log("[ Service Worker Activated ]");
+    console.log("*** Service Worker Activated ***");
     e.waitUntil(
         caches.keys().then(function (cacheNames) {
             return Promise.all(cacheNames.map(function (thisCacheName) {
                 if(thisCacheName != cacheName){
-                    console.log("Service worker removing cached files from ", thisCacheName);
+                    console.log(`*** Service worker removing cached files from ${thisCacheName} ***`);
                     return caches.delete(thisCacheName);
                 }
             }))
@@ -51,11 +51,12 @@ self.addEventListener('fetch', function(event) {
     // console.log('The service worker is serving the asset.');
     event.respondWith(fromNetwork(event.request, 4000)
         .then(res => {
-            console.log(`Request success! ${res}`);
+            // console.log(`Request success! ${res}`);
+            // console.log(res);
             // addToCache(event.request);
             return res;
         }).catch(err => {
-            console.log(`Failed N/W request ${event.request.url}, Error: ${err}`);
+            // console.log(`Failed N/W request ${event.request.url}, Error: ${err}`);
             return fromCache(event.request);
     }));
 });
@@ -63,7 +64,7 @@ self.addEventListener('fetch', function(event) {
 const fromNetwork = (request, timeout) => {
     return new Promise(function (fulfill, reject) {
         let timeoutId = setTimeout(reject, timeout);
-        console.log(`Making N/W request for ${request.url}`);
+        // console.log(`Making N/W request for ${request.url}`);
         fetch(request).then(function (response) {
             clearTimeout(timeoutId);
             fulfill(response);

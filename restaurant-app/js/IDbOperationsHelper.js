@@ -25,7 +25,7 @@ class IDbOperationsHelper {
 			transact.objectStore(objectStoreName).put(jsonData);
 			return transact.complete;
 		}).then(response => {
-			console.log('Restaurant saved to IDb');
+			console.log('Restaurant saved to IDB');
 		});
 	}
 
@@ -62,10 +62,10 @@ class IDbOperationsHelper {
 					});
 				}
 
-				console.log(responseJson);
+				// console.log(responseJson);
 				callback (null, responseJson);
 			}).catch(error => {
-				console.log(`Unable to fetch restaurants, Error: ${error}`);
+				// console.log(`Unable to fetch restaurants, Error: ${error}`);
 				callback (error, null);
 			});
 	}
