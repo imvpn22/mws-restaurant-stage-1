@@ -1,5 +1,3 @@
-/*eslint-env node */
-
 var gulp = require('gulp');
 var autoprefixer = require('gulp-autoprefixer');
 var browserSync = require('browser-sync').create();
@@ -21,17 +19,18 @@ gulp.task('css', function() {
 });
 
 gulp.task('js', function() {
-	return gulp.src(['js/indexController.js',
+	return gulp.src([
+		'js/indexController.js',
 		'js/idb.js',
 		'js/IDbOperationsHelper.js',
-		'js/dbhelper.js'])
-		.pipe(sourcemaps.init())
+		'js/dbhelper.js'
+		]).pipe(sourcemaps.init())
 		// eslint() attaches the lint output to the eslint property
 		// of the file object so it can be used by other modules.
-		// .pipe(eslint())
+		.pipe(eslint())
 		// eslint.format() outputs the lint results to the console.
 		// Alternatively use eslint.formatEach() (see Docs).
-		// .pipe(eslint.format())
+		.pipe(eslint.format())
 		// To have the process exit with an error code (1) on
 		// lint error, return the stream and pipe to failOnError last.
 		// .pipe(eslint.failOnError())
@@ -41,13 +40,21 @@ gulp.task('js', function() {
 		.pipe(gulp.dest('build/js'));
 });
 
-gulp.task('default', gulp.series('css', 'js', function(done) {
+
+
+gulp.task('browsersync', function() {
+    return browserSync.init({
+    	server: {
+			baseDir   : './',
+	      	index     : 'index.html'
+	    },
+	    port        : 8080,
+	    files       : './**',
+	    open        : true
+	    });
+});
+
+gulp.task('default', gulp.parallel('css', 'js', 'browsersync', function() {
 	gulp.watch('css/*.css', gulp.parallel('css'));
-	gulp.watch('js/ *.js', gulp.parallel('js'));
-
-	browserSync.init({
-	    server: './'
-	});
-	done();
+	gulp.watch('js/*.js', gulp.parallel('js'));
 }));
-

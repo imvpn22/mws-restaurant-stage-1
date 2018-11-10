@@ -133,7 +133,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 	const title = document.createElement('h3');
 	title.innerHTML = 'Reviews';
 	title.setAttribute('tabindex', 0);
-	container.appendChild(title);
+	container.prepend(title);
 
 	if (!reviews) {
 		const noReviews = document.createElement('p');
@@ -146,7 +146,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 	reviews.forEach(review => {
 		ul.appendChild(createReviewHTML(review));
 	});
-	container.appendChild(ul);
+	container.prepend(ul);
 };
 
 /**
@@ -221,3 +221,37 @@ getParameterByName = (name, url) => {
 		return '';
 	return decodeURIComponent(results[2].replace(/\+/g, ' '));
 };
+
+
+/* Function to calculate rating stars */
+let stars = document.querySelectorAll('.rating-star');
+stars.forEach((star, i) => {
+	star.addEventListener('click', e => {
+		for (let j = 0; j <= i; j++) {
+			stars[j].classList.add('checked');
+		}
+		for (let j = i+1; j < stars.length; j++) {
+			stars[j].classList.remove('checked');
+		}
+	})
+});
+
+document.getElementById('addReviewBtn')
+	.addEventListener('click', e => {
+		// calculate rating, name and review and store in a json
+		let review = {};
+		review.name = document.getElementById('userName').value;
+		review.comment = document.getElementById('userComment').value;
+		review.rating = document.querySelectorAll('.rating-star.checked').length;
+
+		console.log(review);
+		console.log(self.restaurant);
+
+		// Save this into indexDB
+
+})
+
+addReviewToIndexDb = (review) => {
+
+}
+

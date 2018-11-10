@@ -455,3 +455,33 @@ i {
 .leaflet-container a {
     color: #006892;
 }
+
+/* Style for review form */
+.review-form {
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5em;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+}
+
+#userName, #userComment, #addReviewBtn {
+    max-width: 100%;
+    margin: 1em 0;
+    padding: .4em 1.3em;
+    border: none;
+    border-radius: 3px;
+}
+
+#userName, #userComment {
+    width: 90%;
+}
+
+#addReviewBtn {
+    background-color: #f7a535;
+}
+
+.checked {
+    color: orange;
+}
+
