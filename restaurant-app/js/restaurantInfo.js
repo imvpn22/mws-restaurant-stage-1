@@ -102,7 +102,8 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 		fillRestaurantHoursHTML();
 	}
 	// fill reviews
-	fillReviewsHTML();
+	// Get the reviews from API
+	getReviewsFromServer(restaurant.id);
 };
 
 /**
@@ -128,25 +129,20 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 /**
  * Create all reviews HTML and add them to the webpage.
  */
-fillReviewsHTML = (reviews = self.restaurant.reviews) => {
-	const container = document.getElementById('reviews-container');
-	const title = document.createElement('h3');
-	title.innerHTML = 'Reviews';
-	title.setAttribute('tabindex', 0);
-	container.prepend(title);
-
+fillReviewsHTML = (reviews = this.restaurant.reviews) => {
+	const ul = document.getElementById('reviews-list');
 	if (!reviews) {
 		const noReviews = document.createElement('p');
 		noReviews.innerHTML = 'No reviews yet!';
 		noReviews.setAttribute('tabindex', 0);
 		container.appendChild(noReviews);
 		return;
+	} else {
+		reviews.forEach(review => {
+			ul.prepend(createReviewHTML(review));
+		});
+		// container.insertBefore(ul, container.lastChild);
 	}
-	const ul = document.getElementById('reviews-list');
-	reviews.forEach(review => {
-		ul.appendChild(createReviewHTML(review));
-	});
-	container.prepend(ul);
 };
 
 /**
@@ -163,7 +159,7 @@ createReviewHTML = (review) => {
 
 	const date = document.createElement('p');
 	date.className = 'review-date';
-	date.innerHTML = '<i class=\'fa fa-calendar\'></i>' + review.date;
+	date.innerHTML = '<i class=\'fa fa-calendar\'></i>' + Date(review.createdAt);
 	date.setAttribute('tabindex', 0);
 	li.appendChild(date);
 
@@ -177,7 +173,7 @@ createReviewHTML = (review) => {
 	// Filled star for rating
 	for (i=0; i<review.rating; i++) {
 		let star = document.createElement('i');
-		star.className = 'fa fa-star';
+		star.className = 'fa fa-star checked';
 		rating.appendChild(star);
 	}
 	for (i=review.rating; i<5; i++) {
@@ -228,10 +224,12 @@ let stars = document.querySelectorAll('.rating-star');
 stars.forEach((star, i) => {
 	star.addEventListener('click', e => {
 		for (let j = 0; j <= i; j++) {
-			stars[j].classList.add('checked');
+			stars[j].classList.add('fa', 'checked');
+			stars[j].classList.remove('far');
 		}
 		for (let j = i+1; j < stars.length; j++) {
-			stars[j].classList.remove('checked');
+			stars[j].classList.remove('fa', 'checked');
+			stars[j].classList.add('far');
 		}
 	})
 });
@@ -240,19 +238,43 @@ document.getElementById('addReviewBtn')
 	.addEventListener('click', e => {
 		// calculate rating, name and review and store in a json
 		let review = {};
+		review.restaurant_id = self.restaurant.id;
 		review.name = document.getElementById('userName').value;
-		review.comment = document.getElementById('userComment').value;
 		review.rating = document.querySelectorAll('.rating-star.checked').length;
-
-		console.log(review);
-		console.log(self.restaurant);
+		review.comments = document.getElementById('userComment').value;
 
 		// Save this into indexDB
-
+		// Save on server
+		addReviewToServer(review);
 })
 
-addReviewToIndexDb = (review) => {
 
+/* Fetch reviews from server*/
+getReviewsFromServer = (restaurantId) => {
+	fetch(`http://localhost:1337/reviews/?restaurant_id=${restaurantId}`, {
+		method: 'GET'
+	}).then(res => res.json())
+	.then(res => {
+		fillReviewsHTML(res);
+	}).catch(err => {
+		console.log(`Unable to fetch review, Error: ${err}`);
+		return null;
+	});
 }
 
-
+/* Fetch POST review*/
+addReviewToServer = (review) => {
+	fetch(`http://localhost:1337/reviews/`, {
+		method: 'POST',
+		headers: {
+            "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify(review)
+	}).then(res => {
+		// console.log(res);
+		console.log('Review added !');
+	}).catch(err => {
+		console.log(`Failed to add review, Error: ${err}`);
+		return null;
+	});
+}

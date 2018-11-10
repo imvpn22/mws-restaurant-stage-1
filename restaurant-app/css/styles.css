@@ -481,7 +481,6 @@ i {
 /* Style for review form */
 .review-form {
     width: 100%;
-    max-width: 400px;
     padding: 1.5em;
     background-color: #e0e0e0;
     border-radius: 5px;
@@ -492,15 +491,19 @@ i {
     margin: 1em 0;
     padding: .4em 1.3em;
     border: none;
-    border-radius: 3px;
+    outline: none;
 }
 
 #userName, #userComment {
     width: 90%;
+     border: 1px dashed #aaa;
 }
 
 #addReviewBtn {
     background-color: #f7a535;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: .5em 2em;
 }
 
 .checked {
