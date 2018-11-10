@@ -21,7 +21,7 @@
           "Sunday": "12:00 pm - 4:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095563444,
-        "updatedAt": "2018-11-10T13:17:56.791Z",
+        "updatedAt": "2018-11-10T17:07:01.882Z",
         "id": 1,
         "is_favorite": "false"
       },
@@ -45,8 +45,8 @@
           "Sunday": "12:00 pm - 3:00 pm, 5:00 pm - 11:00 pm"
         },
         "createdAt": 1504095568414,
-        "updatedAt": "2018-11-10T12:39:23.135Z",
-        "is_favorite": "true",
+        "updatedAt": "2018-11-10T16:56:49.643Z",
+        "is_favorite": "false",
         "id": 2
       },
       {
@@ -69,7 +69,7 @@
           "Sunday": "11:30 am - 2:00 am"
         },
         "createdAt": 1504095571434,
-        "updatedAt": "2018-11-10T13:17:05.084Z",
+        "updatedAt": "2018-11-10T16:56:51.993Z",
         "id": 3,
         "is_favorite": "false"
       },
@@ -141,8 +141,8 @@
           "Sunday": "12:00 pm - 9:00 pm"
         },
         "createdAt": 1504095567071,
-        "updatedAt": "2018-11-10T13:10:11.647Z",
-        "is_favorite": "true",
+        "updatedAt": "2018-11-10T16:16:22.400Z",
+        "is_favorite": "false",
         "id": 6
       },
       {
@@ -165,7 +165,7 @@
           "Sunday": "11:30 am - 10:00 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": "2018-11-10T13:17:09.490Z",
+        "updatedAt": "2018-11-10T16:16:25.414Z",
         "is_favorite": "false",
         "id": 7
       },
@@ -189,8 +189,8 @@
           "Sunday": "10:00 am - 3:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": "2018-11-10T13:10:21.080Z",
-        "is_favorite": "true",
+        "updatedAt": "2018-11-10T16:16:24.334Z",
+        "is_favorite": "false",
         "id": 8
       },
       {
@@ -236,8 +236,8 @@
           "Sunday": "11:00 am - 12:00 am"
         },
         "createdAt": 1504095567183,
-        "updatedAt": "2018-11-10T13:15:02.931Z",
-        "is_favorite": "true",
+        "updatedAt": "2018-11-10T16:16:27.077Z",
+        "is_favorite": "false",
         "id": 10
       }
     ],

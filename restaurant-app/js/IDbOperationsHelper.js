@@ -101,6 +101,35 @@ class IDbOperationsHelper {
 		});
 	}
 
+	/* FAILED::: Function to update the Restaurant data*/
+	static updateRestaurantData(restaurant) {
+		var idbName = 'restaurants-data';
+		var dbVersion = 1;
+		var objectStoreName = 'restaurants';
+		var transactionName = 'restaurants';
+		var dbPermission = 'readwrite';
+
+		var dbPromise = IDbOperationsHelper.openIDb(
+			idbName,
+			dbVersion,
+			objectStoreName
+		);
+
+		/* Put JSON data to indexDB*/
+		dbPromise.then(db => {
+			 return db.transaction(objectStoreName, dbPermission)
+			.objectStore(objectStoreName)
+			.put(restaurant)
+		}
+		).then(res => {
+			console.log('test success');
+			console.log(res);
+		}).catch(err => {
+			console.log('test failed');
+			console.log(err);
+		});
+	}
+
 	// Handle for last entry on Restaurants List
 	static addMissingData(restJson) {
 		if (!isNaN(restJson.photograph)) {

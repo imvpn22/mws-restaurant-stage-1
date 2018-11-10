@@ -238,7 +238,17 @@
 addRestaurantToFavorite = (restaurant, flag) => {
 	fetch(`http://localhost:1337/restaurants/${restaurant.id}/?is_favorite=${flag}`, {
 		method: 'PUT'
-	}).then(res => console.log(res))
+	}).then(res => res.json())
+	.then(restaurant => {
+		if (restaurant.is_favorite) {
+			console.log('Added restaurant to favorite');
+		} else {
+			console.log('Removed from favorite');
+		}
+		/* Need to update this in IndexDB*/
+		// IDbOperationsHelper.updateRestaurantData(restaurant);
+
+	})
 	.catch(err => console.log(err));
 }
 
