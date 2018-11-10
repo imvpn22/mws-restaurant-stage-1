@@ -179,11 +179,11 @@
 
 	favBtn.addEventListener('click', e => {
 		if (restaurant.is_favorite) {
-			addRestaurantToFavourite(restaurant, false);
+			addRestaurantToFavorite(restaurant, false);
 			restaurant.is_favorite = false;
 			favBtn.classList.remove('fav-btn-active');
 		} else {
-			addRestaurantToFavourite(restaurant, true);
+			addRestaurantToFavorite(restaurant, true);
 			restaurant.is_favorite = true;
 			favBtn.classList.add('fav-btn-active');
 		}
@@ -235,7 +235,7 @@
  };
 
 /* Handle favourite Button*/
-addRestaurantToFavourite = (restaurant, flag) => {
+addRestaurantToFavorite = (restaurant, flag) => {
 	fetch(`http://localhost:1337/restaurants/${restaurant.id}/?is_favorite=${flag}`, {
 		method: 'PUT'
 	}).then(res => console.log(res))
