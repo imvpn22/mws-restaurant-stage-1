@@ -1,5 +1,6 @@
 var API_URL = 'http://localhost:1337/restaurants';
 var fetchStatus = 0;
+var reviewsFetchStatus = 0;
 
 // Helper Functions for various IDb Operations
 class IDbOperationsHelper {
@@ -40,7 +41,7 @@ class IDbOperationsHelper {
 		});
 	}
 
-	static getRestaurantsFromServer(dbPromise, objectStoreName, permision, callback) {
+	static getDataFromServer(dbPromise, objectStoreName, permision, callback) {
 		fetch(API_URL)
 			.then(response => response.json())
 			.then(responseJson => {
@@ -51,7 +52,6 @@ class IDbOperationsHelper {
 				if (fetchStatus != 1) {
 					fetchStatus = 1;
 					responseJson.forEach(restaurantData => {
-
 						//Add every single restaurant data to IDb
 						IDbOperationsHelper.addToDb(
 							dbPromise,
@@ -61,7 +61,6 @@ class IDbOperationsHelper {
 						);
 					});
 				}
-
 				// console.log(responseJson);
 				callback (null, responseJson);
 			}).catch(error => {
@@ -89,7 +88,7 @@ class IDbOperationsHelper {
 				.getAll()
 		).then(responseObejcts => {
 			if (responseObejcts.length <= 0) {
-				IDbOperationsHelper.getRestaurantsFromServer(
+				IDbOperationsHelper.getDataFromServer(
 					dbPromise,
 					objectStoreNameString,
 					dbPermission,
@@ -139,4 +138,63 @@ class IDbOperationsHelper {
 		}
 		return restJson;
 	}
+
+	/* Fetch All reviews from server and save to IndexDB ObjectStore*/
+	static getReviewsFromServer(dbPromise, objectStoreName, permision, callback) {
+		fetch(`http://localhost:1337/reviews/`)
+			.then(response => response.json())
+			.then(responseJson => {
+				// Sort by restaurant ID
+				// responseJson.sort((a,b) => a.restaurant_id - b.restaurant_id);
+
+				// Add Reviews in IndexDB if not added before
+				if (reviewsFetchStatus != 1) {
+					reviewsFetchStatus = 1;
+					responseJson.forEach(restaurantData => {
+						IDbOperationsHelper.addToDb(
+							dbPromise,
+							objectStoreName,
+							permision,
+							restaurantData
+						);
+					});
+				}
+				callback (null, responseJson);
+			}).catch(error => {
+				// console.log(`Unable to fetch restaurants, Error: ${error}`);
+				callback (error, null);
+			});
+	}
+
+	static getReviewsData(callback) {
+		var idbName = 'restaurants-data';
+		var dbVersion = 1;
+		var objectStoreNameString = 'reviews';
+		var transactionNameString = 'reviews';
+		var dbPermission = 'readwrite';
+
+		var dbPromise = IDbOperationsHelper.openIDb(
+			idbName,
+			dbVersion,
+			objectStoreNameString
+		);
+
+		dbPromise.then(db =>
+			db.transaction(transactionNameString)
+				.objectStore(objectStoreNameString)
+				.getAll()
+		).then(responseObejcts => {
+			if (responseObejcts.length <= 0) {
+				IDbOperationsHelper.getReviewsFromServer(
+					dbPromise,
+					objectStoreNameString,
+					dbPermission,
+					callback
+				);
+			} else {
+				callback(null, responseObejcts);
+			}
+		});
+	}
+
 }
