@@ -102,8 +102,14 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 		fillRestaurantHoursHTML();
 	}
 	// fill reviews
-	// Get the reviews from API
-	getReviewsFromServer(restaurant.id);
+	// Get the reviews data for restaurant
+	DBHelper.fetchReviewsForRestaurant(restaurant.id, (err, res) => {
+		if (err) {
+			console.log(err);
+		} else {
+			fillReviewsHTML(res);
+		}
+	});
 };
 
 /**

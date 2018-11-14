@@ -1,6 +1,7 @@
 var API_URL = 'http://localhost:1337/restaurants';
 var fetchStatus = 0;
 var reviewsFetchStatus = 0;
+var DB_VERSION = 1;
 
 // Helper Functions for various IDb Operations
 class IDbOperationsHelper {
@@ -71,7 +72,7 @@ class IDbOperationsHelper {
 
 	static getRestaurantsData(callback) {
 		var idbName = 'restaurants-data';
-		var dbVersion = 1;
+		var dbVersion = DB_VERSION;
 		var objectStoreNameString = 'restaurants';
 		var transactionNameString = 'restaurants';
 		var dbPermission = 'readwrite';
@@ -103,7 +104,7 @@ class IDbOperationsHelper {
 	/* FAILED::: Function to update the Restaurant data*/
 	static updateRestaurantData(restaurant) {
 		var idbName = 'restaurants-data';
-		var dbVersion = 1;
+		var dbVersion = DB_VERSION;
 		var objectStoreName = 'restaurants';
 		var transactionName = 'restaurants';
 		var dbPermission = 'readwrite';
@@ -161,14 +162,13 @@ class IDbOperationsHelper {
 				}
 				callback (null, responseJson);
 			}).catch(error => {
-				// console.log(`Unable to fetch restaurants, Error: ${error}`);
 				callback (error, null);
 			});
 	}
 
 	static getReviewsData(callback) {
 		var idbName = 'restaurants-data';
-		var dbVersion = 1;
+		var dbVersion = DB_VERSION;
 		var objectStoreNameString = 'reviews';
 		var transactionNameString = 'reviews';
 		var dbPermission = 'readwrite';
@@ -180,7 +180,7 @@ class IDbOperationsHelper {
 		);
 
 		dbPromise.then(db =>
-			db.transaction(transactionNameString)
+			db.transaction(transactionNameString, dbPermission)
 				.objectStore(objectStoreNameString)
 				.getAll()
 		).then(responseObejcts => {
@@ -194,6 +194,8 @@ class IDbOperationsHelper {
 			} else {
 				callback(null, responseObejcts);
 			}
+		}).catch(err => {
+			callback(err, null);
 		});
 	}
 

@@ -154,4 +154,20 @@ class DBHelper {
 		marker.addTo(newMap);
 		return marker;
 	}
+
+	/* Get reviews for a restaurant*/
+	static fetchReviewsForRestaurant(restaurant_id, callback) {
+		IDbOperationsHelper.getReviewsData((error, allReviews) => {
+			if (error) {
+				callback(error, null);
+			} else {
+				let reviews = allReviews.filter(r => r.restaurant_id == restaurant_id);
+				if (reviews) {
+					callback(null, reviews);
+				} else {
+					callback('Review does not exist', null);
+				}
+			}
+		});
+	}
 }
