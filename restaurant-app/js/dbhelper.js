@@ -170,4 +170,12 @@ class DBHelper {
 			}
 		});
 	}
+
+	/* Add new review for a restaurant*/
+	static addReviewForRestaurant(reviewData, callback) {
+		IDbOperationsHelper.addReviewToIdb(reviewData);
+		callback('Review added to IDB');
+	}
+
+
 }

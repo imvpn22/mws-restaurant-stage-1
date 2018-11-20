@@ -557,6 +557,51 @@
         "createdAt": "2018-11-10T20:07:47.367Z",
         "updatedAt": "2018-11-10T20:07:47.367Z",
         "id": 36
+      },
+      {
+        "restaurant_id": 1,
+        "name": "Test 0",
+        "rating": 3,
+        "comments": "This is test 0",
+        "createdAt": "2018-11-20T13:16:52.472Z",
+        "updatedAt": "2018-11-20T13:16:52.472Z",
+        "id": 37
+      },
+      {
+        "restaurant_id": 1,
+        "name": "Test 1",
+        "rating": 3,
+        "comments": "Test 1 is it",
+        "createdAt": "2018-11-20T13:19:13.550Z",
+        "updatedAt": "2018-11-20T13:19:13.550Z",
+        "id": 38
+      },
+      {
+        "restaurant_id": 1,
+        "name": "20039907",
+        "rating": 3,
+        "comments": "This is a review",
+        "createdAt": "2018-11-20T13:20:33.814Z",
+        "updatedAt": "2018-11-20T13:20:33.814Z",
+        "id": 39
+      },
+      {
+        "restaurant_id": 1,
+        "name": "Test 2",
+        "rating": 5,
+        "comments": "This is another test",
+        "createdAt": "2018-11-20T13:25:53.273Z",
+        "updatedAt": "2018-11-20T13:25:53.273Z",
+        "id": 40
+      },
+      {
+        "restaurant_id": 1,
+        "name": "Test 4",
+        "rating": 5,
+        "comments": "This is 4th test",
+        "createdAt": "2018-11-20T13:27:50.826Z",
+        "updatedAt": "2018-11-20T13:27:50.826Z",
+        "id": 41
       }
     ]
   },
@@ -612,7 +657,7 @@
       "id": 10
     },
     "reviews": {
-      "id": 36
+      "id": 41
     }
   }
 }

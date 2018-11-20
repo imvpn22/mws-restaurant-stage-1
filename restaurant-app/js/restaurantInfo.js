@@ -108,6 +108,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 			console.log(err);
 		} else {
 			fillReviewsHTML(res);
+			getLocalReviews();
 		}
 	});
 };
@@ -145,7 +146,8 @@ fillReviewsHTML = (reviews = this.restaurant.reviews) => {
 		return;
 	} else {
 		reviews.forEach(review => {
-			ul.prepend(createReviewHTML(review));
+			// ul.prepend(createReviewHTML(review));
+			ul.insertBefore(createReviewHTML(review), ul.childNodes[ul.childNodes.length-2]);
 		});
 		// container.insertBefore(ul, container.lastChild);
 	}
@@ -240,8 +242,10 @@ stars.forEach((star, i) => {
 	})
 });
 
-document.getElementById('addReviewBtn')
-	.addEventListener('click', e => {
+document.getElementById('newReviewForm')
+	.addEventListener('submit', e => {
+		e.preventDefault();
+
 		// calculate rating, name and review and store in a json
 		let review = {};
 		review.restaurant_id = self.restaurant.id;
@@ -249,9 +253,13 @@ document.getElementById('addReviewBtn')
 		review.rating = document.querySelectorAll('.rating-star.checked').length;
 		review.comments = document.getElementById('userComment').value;
 
-		// Save this into indexDB
-		// Save on server
-		addReviewToServer(review);
+		// Validate data first
+
+		// Save this into Localstore
+		addReviewsToLocalStore(review);
+
+		// Clear form
+		e.target.reset();
 })
 
 
@@ -269,18 +277,48 @@ getReviewsFromServer = (restaurantId) => {
 }
 
 /* Fetch POST review*/
-addReviewToServer = (review) => {
+addReviewToServer = (review, callback) => {
 	fetch(`http://localhost:1337/reviews/`, {
 		method: 'POST',
 		headers: {
             "Content-Type": "application/json; charset=utf-8"
         },
         body: JSON.stringify(review)
-	}).then(res => {
-		// console.log(res);
-		console.log('Review added !');
+	}).then(res => res.json()).then(res => {
+		callback(null, res);
 	}).catch(err => {
-		console.log(`Failed to add review, Error: ${err}`);
-		return null;
+		callback(err, null);
 	});
 }
+
+// Define array for storing new reviews
+let newReviews = localStorage.getItem('newReviews') ? JSON.parse(localStorage.getItem('newReviews')) : [];
+localStorage.setItem('newReviews', JSON.stringify(newReviews));
+
+addReviewsToLocalStore = (review) => {
+	if (navigator.onLine) {
+		addReviewToServer(review, (err, res) => {
+			if (err) {
+				console.log(`Failed to add review, Error: ${err}`);
+			} else {
+				// console.log('Review added !');
+				// Add new review to IndexDB
+				IDbOperationsHelper.addReviewToIdb(res);
+			}
+		});
+	} else {
+		newReviews.push(review);
+		localStorage.setItem('newReviews', JSON.stringify(newReviews));
+	}
+	fillReviewsHTML([review]);
+};
+
+getLocalReviews = () => {
+	let localReviews = JSON.parse(localStorage.getItem('newReviews'));
+	localReviews = localReviews.filter(r => r.restaurant_id == self.restaurant.id);
+	fillReviewsHTML(localReviews);
+};
+
+// Now check for Online network
+
+

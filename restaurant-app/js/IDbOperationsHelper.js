@@ -1,7 +1,7 @@
 var API_URL = 'http://localhost:1337/restaurants';
 var fetchStatus = 0;
 var reviewsFetchStatus = 0;
-var DB_VERSION = 1;
+var DB_VERSION = 2;
 
 // Helper Functions for various IDb Operations
 class IDbOperationsHelper {
@@ -27,7 +27,10 @@ class IDbOperationsHelper {
 			transact.objectStore(objectStoreName).put(jsonData);
 			return transact.complete;
 		}).then(response => {
-			console.log('Restaurant saved to IDB');
+			console.log('Data saved to IDB');
+			return response;
+		}).catch(err => {
+			return err;
 		});
 	}
 
@@ -167,7 +170,7 @@ class IDbOperationsHelper {
 	}
 
 	static getReviewsData(callback) {
-		var idbName = 'restaurants-data';
+		var idbName = 'reviews-data';
 		var dbVersion = DB_VERSION;
 		var objectStoreNameString = 'reviews';
 		var transactionNameString = 'reviews';
@@ -197,6 +200,28 @@ class IDbOperationsHelper {
 		}).catch(err => {
 			callback(err, null);
 		});
+	}
+
+	// Add review data in indexDB
+	static addReviewToIdb(reviewData) {
+		var idbName = 'reviews-data';
+		var dbVersion = DB_VERSION;
+		var objectStoreName = 'reviews';
+		var transactionName = 'reviews';
+		var dbPermission = 'readwrite';
+
+		var dbPromise = IDbOperationsHelper.openIDb(
+			idbName,
+			dbVersion,
+			objectStoreName
+		);
+
+		IDbOperationsHelper.addToDb(
+			dbPromise,
+			objectStoreName,
+			dbPermission,
+			reviewData
+		);
 	}
 
 }

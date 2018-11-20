@@ -61,20 +61,20 @@
 		<section id="reviews-container">
 			<h3>Reviews</h3>
 			<ul id="reviews-list" tabindex="0">
-				<li class='review-form'>
+				<form class='review-form' id='newReviewForm'>
 					<h3> Add a Review </h3>
 					<div>
-						<div>Your Rating</div>
+						<span>Your Rating </span>
 						<i class="rating-star far fa-star"></i>
 						<i class="rating-star far fa-star"></i>
 						<i class="rating-star far fa-star"></i>
 						<i class="rating-star far fa-star"></i>
 						<i class="rating-star far fa-star"></i>
 					</div>
-					<input type="text" id='userName' placeholder="Name"> <br>
-					<textarea id='userComment' placeholder="Write a review" rows="7"></textarea>
+					<input type="text" id='userName' placeholder="Name" required="true"> <br>
+					<textarea id='userComment' placeholder="Write a review" rows="7" required="true"></textarea>
 					<button id="addReviewBtn">Post</button>
-				</li>
+				</form>
 			</ul>
 		</section>
 		<!-- End reviews -->
