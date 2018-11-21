@@ -1,5 +1,5 @@
-var cacheName = 'main-cache';
-var cacheFiles = [
+const cacheName = 'main-cache';
+const cacheFiles = [
     './',
     './index.html',
     './img/1.jpg',

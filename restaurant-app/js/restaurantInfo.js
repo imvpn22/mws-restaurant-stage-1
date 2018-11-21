@@ -120,6 +120,7 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 	const hours = document.getElementById('restaurant-hours');
 	for (let key in operatingHours) {
 		const row = document.createElement('tr');
+		row.setAttribute('tabindex', 0);
 
 		const day = document.createElement('td');
 		day.innerHTML = key;

@@ -3,6 +3,7 @@
 
 <head>
 	<!-- Meta contents for improving the SEO -->
+	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="theme-color" content="#3397DB">
 	<meta name="Description" content="Individual restaurant review page">
@@ -51,20 +52,20 @@
 		<!-- Beginning restaurant -->
 		<section id="restaurant-container">
 			<h2 id="restaurant-name" tabindex="0"></h2>
-			<img id="restaurant-img" tabindex="0" src="/img/icon.png" alt="">
+			<img id="restaurant-img" src="/img/icon.png" alt="">
 			<p id="restaurant-cuisine" tabindex="0"></p>
 			<p id="restaurant-address" tabindex="0"></p>
-			<table id="restaurant-hours" tabindex="0"></table>
+			<table id="restaurant-hours"></table>
 		</section>
 		<!-- end restaurant -->
 		<!-- Beginning reviews -->
 		<section id="reviews-container">
 			<div class='sub-head'>Reviews</div>
-			<ul id="reviews-list" tabindex="0">
+			<ul id="reviews-list">
 				<form class='review-form' id='newReviewForm'>
 					<h3> Add a Review </h3>
 					<div>
-						<div>Rating </div>
+						<div tabindex="0">Rating </div>
 						<i class="rating-star far fa-star"></i>
 						<i class="rating-star far fa-star"></i>
 						<i class="rating-star far fa-star"></i>
