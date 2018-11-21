@@ -167,7 +167,7 @@ createReviewHTML = (review) => {
 
 	const date = document.createElement('p');
 	date.className = 'review-date';
-	date.innerHTML = '<i class=\'fa fa-calendar\'></i>' + new Date(review.createdAt);
+	date.innerHTML = `<i class='fa fa-calendar'></i> ${moment(review.createdAt).format('Do MMM YYYY')}`;
 	date.setAttribute('tabindex', 0);
 	li.appendChild(date);
 
@@ -252,6 +252,7 @@ document.getElementById('newReviewForm')
 		review.name = document.getElementById('userName').value;
 		review.rating = document.querySelectorAll('.rating-star.checked').length;
 		review.comments = document.getElementById('userComment').value;
+		review.createdAt = moment();
 
 		// Validate data first
 

@@ -85,10 +85,10 @@ const addToCache = request => {
     .then(cache => {
         cache.add(request)
         .then(res => {
-            console.log(`Added ${request.url} to cache, Response: ${res}`);
+            // console.log(`Added ${request.url} to cache, Response: ${res}`);
         })
         .catch(err => {
-            console.log(`Failed to cache ${request.url}, Error ${err}`);
+            // console.log(`Failed to cache ${request.url}, Error ${err}`);
         });
     }).catch(err => {
         console.log(`Error opening cache`);
