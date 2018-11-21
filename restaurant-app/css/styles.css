@@ -254,7 +254,7 @@ nav h1 a {
 .inside #footer {
     bottom: 0;
     position: absolute;
-    width: 100%;
+    width: 50%;
 }
 #restaurant-name {
     color: #d27100;
@@ -299,18 +299,20 @@ nav h1 a {
     margin-top: 10em;
 }
 #reviews-container {
-    padding: 2em;
+    padding: 2em 0;
 }
-#reviews-container h2 {
-    color: #f58500;
-    font-size: 24pt;
-    font-weight: 300;
-    letter-spacing: -1px;
-    padding-bottom: 1pt;
+#reviews-container .sub-head {
+    font-size: 1.5em;
+    margin: 20px 40px;
+    font-weight: 600;
 }
 #reviews-list {
     margin: 0;
     padding: 0;
+    padding-bottom: 3em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 #reviews-list li {
     background-color: #fff;
@@ -383,7 +385,7 @@ i {
     }
     #restaurant-container, #reviews-container {
         border-bottom: none;
-        border-top: 2px solid #ddd;
+        border-top: 1px solid #ddd;
         padding: 0;
     }
     #restaurant-name{
@@ -420,9 +422,12 @@ i {
     }
     #restaurant-container, #reviews-container {
         border-bottom: none;
-        border-top: 4px solid #ddd;
+        border-top: 2px solid #ddd;
         padding: 0;
         width: 100%;
+    }
+    #restaurant-container {
+        margin-top: 0;
     }
     #restaurant-name{
         text-align: center;
@@ -449,6 +454,7 @@ i {
     }
     .inside #footer {
         position: inherit;
+        width: 100%;
     }
 }
 
@@ -502,6 +508,10 @@ i {
     box-shadow: 1px 1px 7px 1px #cecece;
 }
 
+.review-form > div {
+    margin: 1.3em 0;
+}
+
 #userName, #userComment, #addReviewBtn {
     max-width: 100%;
     margin: 1em 0;
@@ -512,7 +522,7 @@ i {
 
 #userName, #userComment {
     width: 90%;
-     border: 1px dashed #aaa;
+    border: 1px dashed #aaa;
 }
 
 #addReviewBtn {
