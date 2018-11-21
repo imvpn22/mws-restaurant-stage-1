@@ -53,7 +53,7 @@ self.addEventListener('fetch', function(event) {
         .then(res => {
             // console.log(`Request success! ${res}`);
             // console.log(res);
-            // addToCache(event.request);
+            addToCache(event.request);
             return res;
         }).catch(err => {
             // console.log(`Failed N/W request ${event.request.url}, Error: ${err}`);

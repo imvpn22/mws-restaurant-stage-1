@@ -104,7 +104,7 @@ class IDbOperationsHelper {
 		});
 	}
 
-	/* FAILED::: Function to update the Restaurant data*/
+	/* Function to update the Restaurant data, using (value, key)*/
 	static updateRestaurantData(restaurant) {
 		var idbName = 'restaurants-data';
 		var dbVersion = DB_VERSION;
@@ -118,27 +118,23 @@ class IDbOperationsHelper {
 			objectStoreName
 		);
 
-		/* Put JSON data to indexDB*/
+		/* Update JSON data to indexDB */
 		dbPromise.then(db => {
 			 return db.transaction(objectStoreName, dbPermission)
 			.objectStore(objectStoreName)
-			.put(restaurant)
+			.put(restaurant, restaurant.id)
 		}
 		).then(res => {
-			console.log('test success');
-			console.log(res);
+			// console.log(res);
 		}).catch(err => {
-			console.log('test failed');
 			console.log(err);
 		});
 	}
 
 	// Handle for last entry on Restaurants List
 	static addMissingData(restJson) {
-		if (!isNaN(restJson.photograph)) {
-			restJson.photograph = restJson.photograph + '.jpg';
-		} else {
-			restJson['photograph'] = restJson.id + '.jpg';
+		if (!restJson.photograph) {
+			restJson.photograph = restJson.id;
 		}
 		return restJson;
 	}

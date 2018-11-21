@@ -1,9 +1,3 @@
-// var restaurants;
-// var neighborhoods;
-// var cuisines;
-// var newMap;
-// var markers = [];
-
 /**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
@@ -88,18 +82,6 @@
 
 	updateRestaurants();
  };
-/* window.initMap = () => {
-  let loc = {
-	lat: 40.722216,
-	lng: -73.987501
-  };
-  self.map = new google.maps.Map(document.getElementById('map'), {
-	zoom: 12,
-	center: loc,
-	scrollwheel: false
-  });
-  updateRestaurants();
-} */
 
 /**
  * Update page and map for current restalisturants.
@@ -174,17 +156,18 @@
 	const favBtn = document.createElement('i');
 	favBtn.className = 'fav-btn fa fa-heart';
 	favBtn.setAttribute('tabindex', 0);
-	if (restaurant.is_favorite) favBtn.classList.add('fav-btn-active');
+	if (restaurant.is_favorite == 'true') favBtn.classList.add('fav-btn-active');
 	li.append(favBtn);
 
+	// Action on Click of Fav-Btn
 	favBtn.addEventListener('click', e => {
-		if (restaurant.is_favorite) {
-			addRestaurantToFavorite(restaurant, false);
-			restaurant.is_favorite = false;
+		if (restaurant.is_favorite == 'true') {
+			addRestaurantToFavorite(restaurant, 'false');
+			restaurant.is_favorite = 'false';
 			favBtn.classList.remove('fav-btn-active');
 		} else {
-			addRestaurantToFavorite(restaurant, true);
-			restaurant.is_favorite = true;
+			addRestaurantToFavorite(restaurant, 'true');
+			restaurant.is_favorite = 'true';
 			favBtn.classList.add('fav-btn-active');
 		}
 	})
@@ -221,7 +204,7 @@
 /**
  * Add markers for current restaurants to the map.
  */
- addMarkersToMap = (restaurants = self.restaurants) => {
+addMarkersToMap = (restaurants = self.restaurants) => {
 	restaurants.forEach(restaurant => {
 		// Add marker to the map
 		const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.newMap);
@@ -234,22 +217,12 @@
 
  };
 
-/* Handle favourite Button*/
+/* Function to handle favourite Button */
 addRestaurantToFavorite = (restaurant, flag) => {
 	fetch(`http://localhost:1337/restaurants/${restaurant.id}/?is_favorite=${flag}`, {
 		method: 'PUT'
-	}).then(res => res.json())
-	.then(restaurant => {
-		if (restaurant.is_favorite) {
-			console.log('Added restaurant to favorite');
-		} else {
-			console.log('Removed from favorite');
-		}
-		/* Need to update this in IndexDB*/
-		// IDbOperationsHelper.updateRestaurantData(restaurant);
-
-	})
-	.catch(err => console.log(err));
-}
-
-
+	}).then(res => res.json()).then(res => {
+		/* Need to update this in IndexDB */
+		IDbOperationsHelper.updateRestaurantData(res);
+	}).catch(err => console.log(err));
+};

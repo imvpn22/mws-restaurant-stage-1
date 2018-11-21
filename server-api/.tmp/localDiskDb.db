@@ -21,9 +21,9 @@
           "Sunday": "12:00 pm - 4:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095563444,
-        "updatedAt": "2018-11-10T19:00:13.768Z",
+        "updatedAt": "2018-11-21T13:34:30.919Z",
         "id": 1,
-        "is_favorite": "false"
+        "is_favorite": "true"
       },
       {
         "name": "Emily",
@@ -45,7 +45,7 @@
           "Sunday": "12:00 pm - 3:00 pm, 5:00 pm - 11:00 pm"
         },
         "createdAt": 1504095568414,
-        "updatedAt": "2018-11-10T16:56:49.643Z",
+        "updatedAt": "2018-11-21T13:34:12.341Z",
         "is_favorite": "false",
         "id": 2
       },
@@ -69,9 +69,9 @@
           "Sunday": "11:30 am - 2:00 am"
         },
         "createdAt": 1504095571434,
-        "updatedAt": "2018-11-10T16:56:51.993Z",
+        "updatedAt": "2018-11-21T13:32:09.909Z",
         "id": 3,
-        "is_favorite": "false"
+        "is_favorite": "true"
       },
       {
         "name": "Katz's Delicatessen",
@@ -93,8 +93,8 @@
           "Sunday": "Sat - 10:30 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": "2018-11-10T13:21:49.042Z",
-        "is_favorite": "true",
+        "updatedAt": "2018-11-21T13:32:35.094Z",
+        "is_favorite": "false",
         "id": 4
       },
       {
@@ -611,6 +611,15 @@
         "createdAt": "2018-11-21T05:01:29.421Z",
         "updatedAt": "2018-11-21T05:01:29.421Z",
         "id": 42
+      },
+      {
+        "restaurant_id": 1,
+        "name": "20039907",
+        "rating": 3,
+        "comments": "This is my rating",
+        "createdAt": "2018-11-21T14:25:23.531Z",
+        "updatedAt": "2018-11-21T14:25:23.531Z",
+        "id": 43
       }
     ]
   },
@@ -666,7 +675,7 @@
       "id": 10
     },
     "reviews": {
-      "id": 42
+      "id": 43
     }
   }
 }
