@@ -167,7 +167,7 @@ createReviewHTML = (review) => {
 
 	const date = document.createElement('p');
 	date.className = 'review-date';
-	date.innerHTML = '<i class=\'fa fa-calendar\'></i>' + Date(review.createdAt);
+	date.innerHTML = '<i class=\'fa fa-calendar\'></i>' + new Date(review.createdAt);
 	date.setAttribute('tabindex', 0);
 	li.appendChild(date);
 
@@ -301,7 +301,6 @@ addReviewsToLocalStore = (review) => {
 			if (err) {
 				console.log(`Failed to add review, Error: ${err}`);
 			} else {
-				// console.log('Review added !');
 				// Add new review to IndexDB
 				IDbOperationsHelper.addReviewToIdb(res);
 			}
@@ -320,5 +319,19 @@ getLocalReviews = () => {
 };
 
 // Now check for Online network
+window.addEventListener('online',  () => {
+	let localReviews = JSON.parse(localStorage.getItem('newReviews'));
+	localReviews.forEach(review => {
+		addReviewToServer(review, (err, res) => {
+			if (err) {
+				console.log(`Failed to add review, Error: ${err}`);
+			} else {
+				// Add new review to IndexDB
+				IDbOperationsHelper.addReviewToIdb(res);
+			}
+		});
+		// Delete review from local store
+		window.localStorage.removeItem('newReviews');
+	})
 
-
+});

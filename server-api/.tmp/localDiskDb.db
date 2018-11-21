@@ -602,6 +602,15 @@
         "createdAt": "2018-11-20T13:27:50.826Z",
         "updatedAt": "2018-11-20T13:27:50.826Z",
         "id": 41
+      },
+      {
+        "restaurant_id": 1,
+        "name": "poiuytgfdbghj",
+        "rating": 4,
+        "comments": "This is not a review",
+        "createdAt": "2018-11-21T05:01:29.421Z",
+        "updatedAt": "2018-11-21T05:01:29.421Z",
+        "id": 42
       }
     ]
   },
@@ -657,7 +666,7 @@
       "id": 10
     },
     "reviews": {
-      "id": 41
+      "id": 42
     }
   }
 }
