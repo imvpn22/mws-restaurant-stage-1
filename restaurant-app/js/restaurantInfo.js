@@ -227,38 +227,25 @@ getParameterByName = (name, url) => {
 	return decodeURIComponent(results[2].replace(/\+/g, ' '));
 };
 
-
-/* Function to calculate rating stars */
-let stars = document.querySelectorAll('.rating-star');
-stars.forEach((star, i) => {
-	star.addEventListener('click', e => {
-		for (let j = 0; j <= i; j++) {
-			stars[j].classList.add('fa', 'checked');
-			stars[j].classList.remove('far');
-		}
-		for (let j = i+1; j < stars.length; j++) {
-			stars[j].classList.remove('fa', 'checked');
-			stars[j].classList.add('far');
-		}
-	})
-});
-
+/* Function to handle Review form */
 document.getElementById('newReviewForm')
 	.addEventListener('submit', e => {
 		e.preventDefault();
+		e.stopImmediatePropagation();
 
 		// calculate rating, name and review and store in a json
 		let review = {};
 		review.restaurant_id = self.restaurant.id;
 		review.name = document.getElementById('userName').value;
-		review.rating = document.querySelectorAll('.rating-star.checked').length;
+		review.rating = document.querySelector('#star_rating input:checked')
+					? document.querySelector('#star_rating input:checked').value : 5;
 		review.comments = document.getElementById('userComment').value;
 		review.createdAt = moment();
 
 		// Validate data first
 
 		// Save this into Localstore
-		addReviewsToLocalStore(review);
+		addReviewToLocalStore(review);
 
 		// Clear form
 		e.target.reset();
@@ -297,7 +284,7 @@ addReviewToServer = (review, callback) => {
 let newReviews = localStorage.getItem('newReviews') ? JSON.parse(localStorage.getItem('newReviews')) : [];
 localStorage.setItem('newReviews', JSON.stringify(newReviews));
 
-addReviewsToLocalStore = (review) => {
+addReviewToLocalStore = (review) => {
 	if (navigator.onLine) {
 		addReviewToServer(review, (err, res) => {
 			if (err) {

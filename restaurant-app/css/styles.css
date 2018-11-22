@@ -524,6 +524,9 @@ i {
     width: 90%;
     border: 1px dashed #aaa;
 }
+.checked {
+    color: #f7a535;
+}
 
 #addReviewBtn {
     background-color: #f7a535;
@@ -532,7 +535,42 @@ i {
     padding: .5em 2em;
 }
 
-.checked {
-    color: orange;
+/* Style for star rating */
+.visuallyhidden {
+    border: 0;
+    height: 1px;
+    width: 1px;
+    padding: 0;
+    margin: -1px;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+    position: absolute;
+}
+
+#star_rating {
+    height: 2em;
+    font-size: 1.3em;
+}
+#star_rating label {
+    font-size: 1em;
+    height: 1.2em;
+    color: #f7a535;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+/* Color of stars next to checked */
+#star_rating input:checked ~ label,
+#star_rating input:hover ~ label,
+#star_rating input:focus ~ label {
+    color: #999;
+}
+#star_rating input:checked + label,
+#star_rating input:hover + label,
+#star_rating input:focus + label {
+    color: #f7a535;
+    border-bottom-color: #f7a535;
+}
+#star_rating input:focus + label {
+    border-bottom-style: dotted;
 }
 
