@@ -4,7 +4,7 @@
   "description": "Project for Google Udacity Challenge",
   "main": "index.html",
   "dependencies": {
-    "browser-sync": "^2.24.7",
+    "browser-sync": "^2.26.7",
     "gulp-autoprefixer": "^6.0.0",
     "gulp-eslint": "^5.0.0",
     "gulp-jasmine-phantom": "^3.0.0",
